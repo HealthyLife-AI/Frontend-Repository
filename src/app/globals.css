@@ -1,0 +1,169 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------- */
+/* HealthyLife AI design tokens — sourced from the approved Stitch design  */
+/* system (DESIGN.md, "Calm Data" style).                                  */
+/* ---------------------------------------------------------------------- */
+:root {
+  --color-surface: #fdf7ff;
+  --color-surface-dim: #ded8e0;
+  --color-surface-bright: #fdf7ff;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f8f2fa;
+  --color-surface-container: #f2ecf4;
+  --color-surface-container-high: #ece6ee;
+  --color-surface-container-highest: #e6e0e9;
+  --color-on-surface: #1d1b20;
+  --color-on-surface-variant: #494551;
+  --color-inverse-surface: #322f35;
+  --color-inverse-on-surface: #f5eff7;
+  --color-outline: #7a7582;
+  --color-outline-variant: #cbc4d2;
+  --color-surface-tint: #006B5F;
+  --color-primary: #006B5F;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #006B5F;
+  --color-on-primary-container: #e0d2ff;
+  --color-inverse-primary: #cfbcff;
+  --color-secondary: #63597c;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #e1d4fd;
+  --color-on-secondary-container: #645a7d;
+  --color-tertiary: #765b00;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #c9a74d;
+  --color-on-tertiary-container: #503d00;
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+  --color-primary-fixed: #e9ddff;
+  --color-primary-fixed-dim: #cfbcff;
+  --color-on-primary-fixed: #22005d;
+  --color-on-primary-fixed-variant: #006B5F;
+  --color-secondary-fixed: #e9ddff;
+  --color-secondary-fixed-dim: #cdc0e9;
+  --color-on-secondary-fixed: #1f1635;
+  --color-on-secondary-fixed-variant: #4b4263;
+  --color-tertiary-fixed: #ffdf93;
+  --color-tertiary-fixed-dim: #e7c365;
+  --color-on-tertiary-fixed: #241a00;
+  --color-on-tertiary-fixed-variant: #594400;
+  --color-background: #fdf7ff;
+  --color-on-background: #1d1b20;
+  --color-surface-variant: #e6e0e9;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  --radius-sm: 0.25rem;
+  --radius-DEFAULT: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-full: 9999px;
+
+  --spacing-base: 4px;
+  --spacing-xs: 8px;
+  --spacing-sm: 16px;
+  --spacing-md: 24px;
+  --spacing-lg: 32px;
+  --spacing-xl: 48px;
+}
+
+@theme inline {
+  --color-surface: var(--color-surface);
+  --color-surface-dim: var(--color-surface-dim);
+  --color-surface-bright: var(--color-surface-bright);
+  --color-surface-container-lowest: var(--color-surface-container-lowest);
+  --color-surface-container-low: var(--color-surface-container-low);
+  --color-surface-container: var(--color-surface-container);
+  --color-surface-container-high: var(--color-surface-container-high);
+  --color-surface-container-highest: var(--color-surface-container-highest);
+  --color-on-surface: var(--color-on-surface);
+  --color-on-surface-variant: var(--color-on-surface-variant);
+  --color-inverse-surface: var(--color-inverse-surface);
+  --color-inverse-on-surface: var(--color-inverse-on-surface);
+  --color-outline: var(--color-outline);
+  --color-outline-variant: var(--color-outline-variant);
+  --color-surface-tint: var(--color-surface-tint);
+  --color-primary: var(--color-primary);
+  --color-on-primary: var(--color-on-primary);
+  --color-primary-container: var(--color-primary-container);
+  --color-on-primary-container: var(--color-on-primary-container);
+  --color-inverse-primary: var(--color-inverse-primary);
+  --color-secondary: var(--color-secondary);
+  --color-on-secondary: var(--color-on-secondary);
+  --color-secondary-container: var(--color-secondary-container);
+  --color-on-secondary-container: var(--color-on-secondary-container);
+  --color-tertiary: var(--color-tertiary);
+  --color-on-tertiary: var(--color-on-tertiary);
+  --color-tertiary-container: var(--color-tertiary-container);
+  --color-on-tertiary-container: var(--color-on-tertiary-container);
+  --color-error: var(--color-error);
+  --color-on-error: var(--color-on-error);
+  --color-error-container: var(--color-error-container);
+  --color-on-error-container: var(--color-on-error-container);
+  --color-primary-fixed: var(--color-primary-fixed);
+  --color-primary-fixed-dim: var(--color-primary-fixed-dim);
+  --color-on-primary-fixed: var(--color-on-primary-fixed);
+  --color-on-primary-fixed-variant: var(--color-on-primary-fixed-variant);
+  --color-secondary-fixed: var(--color-secondary-fixed);
+  --color-secondary-fixed-dim: var(--color-secondary-fixed-dim);
+  --color-on-secondary-fixed: var(--color-on-secondary-fixed);
+  --color-on-secondary-fixed-variant: var(--color-on-secondary-fixed-variant);
+  --color-tertiary-fixed: var(--color-tertiary-fixed);
+  --color-tertiary-fixed-dim: var(--color-tertiary-fixed-dim);
+  --color-on-tertiary-fixed: var(--color-on-tertiary-fixed);
+  --color-on-tertiary-fixed-variant: var(--color-on-tertiary-fixed-variant);
+  --color-background: var(--color-background);
+  --color-on-background: var(--color-on-background);
+  --color-surface-variant: var(--color-surface-variant);
+
+  --font-sans: var(--font-sans);
+
+  --radius-sm: var(--radius-sm);
+  --radius-DEFAULT: var(--radius-DEFAULT);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-full: var(--radius-full);
+}
+
+html,
+body {
+  background: var(--color-background);
+  color: var(--color-on-background);
+  font-family: var(--font-sans);
+}
+
+/* RTL: Arabic gets ~15-20% extra line-height per the design system to avoid
+   glyph clipping in tall scripts. */
+html[dir="rtl"] body {
+  line-height: 1.65;
+}
+
+.material-symbols-outlined {
+  font-family: "Material Symbols Outlined";
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  user-select: none;
+  font-variation-settings:
+    "FILL" 0,
+    "wght" 400,
+    "GRAD" 0,
+    "opsz" 24;
+}
+
+/* Soft, diffused elevation used on cards & modals per the design system. */
+.elevation-card {
+  box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.05);
+}
+
