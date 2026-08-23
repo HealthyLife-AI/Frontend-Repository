@@ -53,7 +53,7 @@ export default function DashboardPage() {
               <span>{t.weight.title}</span>
             </Link>
             <Link
-              href="/setup/results"
+              href="/profile"
               className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-on-surface-variant hover:bg-surface-container-low transition-colors duration-150"
             >
               <span className="material-symbols-outlined">person</span>
