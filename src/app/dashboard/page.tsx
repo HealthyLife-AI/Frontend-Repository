@@ -49,10 +49,10 @@ export default function DashboardPage() {
               <span>{t.weight.title}</span>
             </Link>
             <Link
-              href="/setup/step-1"
+              href="/setup/results"
               className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-on-surface-variant hover:bg-surface-container transition-colors"
             >
-              <span className="material-symbols-outlined">tune</span>
+              <span className="material-symbols-outlined">person</span>
               <span>{t.setup.steps.profile}</span>
             </Link>
           </nav>

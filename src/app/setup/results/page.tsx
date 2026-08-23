@@ -131,12 +131,18 @@ export default function SetupResultsPage() {
           </p>
         )}
 
-        <Button fullWidth className="mt-8" onClick={handleEnterDashboard}>
-          {t.setup.results.enterDashboard}
-          <span className="material-symbols-outlined text-base">
-            arrow_forward
-          </span>
-        </Button>
+        <div className="mt-8 flex flex-col gap-3">
+          <Button fullWidth onClick={handleEnterDashboard}>
+            {t.setup.results.enterDashboard}
+            <span className="material-symbols-outlined text-base ms-1 rtl:rotate-180">
+              arrow_forward
+            </span>
+          </Button>
+          <Button variant="secondary" fullWidth onClick={() => router.push("/setup/step-1")}>
+            <span className="material-symbols-outlined text-base me-1">tune</span>
+            {t.setup.steps.profile}
+          </Button>
+        </div>
       </main>
     </AuthGuard>
   );
