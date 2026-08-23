@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -62,13 +61,17 @@ export default function LoginPage() {
     <main className="flex h-screen w-full overflow-hidden bg-background">
       <div className="flex h-full w-full flex-col lg:flex-row">
         {/* Left Side: Brand Illustration */}
-        <div className="relative hidden lg:flex lg:w-1/2 bg-[#d7efea] items-center justify-center p-8">
+        <div className="relative hidden lg:flex lg:w-1/2 bg-brand-panel items-center justify-center p-8 overflow-hidden">
+          {/* Decorative blobs */}
+          <div className="pointer-events-none absolute -top-24 -start-24 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 -end-20 h-60 w-60 rounded-full bg-[#006B5F]/15 blur-2xl" />
+
           <div className="absolute top-8 start-8 z-10 flex items-center gap-2">
             <span className="material-symbols-outlined text-2xl text-[#006B5F]">nutrition</span>
             <span className="text-xl font-bold text-[#006B5F]">{t.common.appName}</span>
           </div>
 
-          <div className="relative h-full w-full max-w-lg flex items-center justify-center p-4">
+          <div className="relative h-full w-full max-w-lg flex items-center justify-center p-4 drop-shadow-lg">
             <img
               src="/images/brand-illustration.png"
               alt="HealthyLife AI Illustration"
@@ -91,7 +94,7 @@ export default function LoginPage() {
           </div>
 
           {/* Form Container */}
-          <div className="mx-auto my-auto flex w-full max-w-[400px] flex-col gap-6 py-6">
+          <div className="mx-auto my-auto flex w-full max-w-[400px] flex-col gap-6 py-6 animate-fade-up">
             <div>
               <h1 className="text-2xl font-bold text-on-surface md:text-3xl">
                 {t.auth.login.title}
@@ -118,7 +121,7 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
-                    className="material-symbols-outlined text-outline hover:text-on-surface"
+                    className="material-symbols-outlined text-outline hover:text-on-surface transition-colors"
                     aria-label="toggle password visibility"
                   >
                     {showPassword ? "visibility" : "visibility_off"}
@@ -128,25 +131,30 @@ export default function LoginPage() {
               />
 
               {serverError && (
-                <p className="rounded-lg bg-error-container px-4 py-2.5 text-sm text-on-error-container">
+                <p className="rounded-xl bg-error-container px-4 py-3 text-sm text-on-error-container border border-error/20">
                   {serverError}
                 </p>
               )}
 
-              <Button type="submit" fullWidth loading={isSubmitting} className="mt-2 bg-[#006B5F] hover:bg-[#00574d] text-white py-3.5">
+              <Button
+                type="submit"
+                fullWidth
+                loading={isSubmitting}
+                className="mt-2 bg-[#006B5F] hover:bg-[#00574d] active:bg-[#004038] text-white py-3.5 rounded-xl shadow-[0_4px_14px_rgba(0,107,95,0.30)] hover:shadow-[0_6px_20px_rgba(0,107,95,0.40)] transition-all duration-200"
+              >
                 {t.auth.login.submit}
               </Button>
             </form>
 
             <p className="text-center text-sm text-on-surface-variant">
               {t.auth.login.noAccount}{" "}
-              <Link href="/register" className="font-semibold text-[#006B5F] hover:underline">
+              <Link href="/register" className="font-semibold text-[#006B5F] hover:underline underline-offset-2">
                 {t.auth.login.signUp}
               </Link>
             </p>
           </div>
 
-          <div className="text-xs text-on-surface-variant/60 text-center lg:text-start">
+          <div className="text-xs text-on-surface-variant/50 text-center lg:text-start">
             &copy; {new Date().getFullYear()} {t.common.appName}
           </div>
         </div>
