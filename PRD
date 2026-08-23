@@ -1,0 +1,564 @@
+# HealthyLife AI — Product Requirements Document (PRD)
+
+**Prepared for Spec-Driven Development (GitHub Spec Kit)**
+
+| | |
+|---|---|
+| **Product** | HealthyLife AI — AI-powered health & nutrition platform |
+| **Document type** | Consolidated PRD (source of truth for `/speckit.specify`) |
+| **Derived from** | SRS Chapters 1–2 (Rev.), User Stories & Use Case Scenarios v2.3 (Aligned), Milestones v1.2 (Aligned), current codebase state |
+| **Version** | 1.0 |
+| **Date** | 23 / 8 / 2026 |
+| **Status** | Sprints 1–2 implemented and running against a live backend; Sprints 3–6 specified but not yet built |
+
+---
+
+## 0. How to Use This PRD With Spec Kit
+
+This document is written so an agent can turn it directly into Spec Kit artifacts. It deliberately separates **what/why** (feature intent, user value, acceptance criteria — belongs in `spec.md`) from **how** (stack, architecture, file layout — belongs in `plan.md`), per Spec Kit's own guidance not to mix the two at the specify stage. Section 7 ("Technical Reality & Constraints") is the one exception: it's collected in one place *specifically* so it can seed `/speckit.constitution` and inform `/speckit.plan`, rather than being scattered across feature descriptions.
+
+Suggested workflow:
+
+1. **Place this file at the repo root** as `PRD.md` (or per-repo if frontend/backend are separate repos — see §7.1).
+2. **Run `/speckit.constitution` once**, pointing the agent at §7 (Technical Reality & Constraints) and §8 (Global Non-Functional Requirements). These become the project's standing rules that every later spec, plan, and task is checked against.
+3. **Run `/speckit.specify` once per Epic** (§11.1–§11.6), not once for the whole PRD — each epic is already scoped to one sprint and one feature branch, which is exactly Spec Kit's grain. Feed the agent the specific epic section plus §9 (Data Entities) and §13 (Traceability Matrix row) for that epic. Suggested feature directory naming: `specs/001-foundation-auth/`, `specs/002-health-profile/`, `specs/003-food-meal-tracking/`, `specs/004-dashboard-reporting/`, `specs/005-ai-insights/`, `specs/006-admin-testing-deployment/` — matching Sprints 1–6.
+4. For **Epics 1–2 (already implemented)**, use `/speckit.specify` to *reverse-document* the existing Next.js + Laravel implementation into `spec.md`, rather than to plan new work — the "Current Implementation Notes" callouts in §11.1–§11.2 exist for this purpose. This gives the rest of the project a real spec to diff against instead of a gap.
+5. Run `/speckit.clarify` before `/speckit.plan` on any epic with an item listed under "Open Questions" in §15 — those are exactly the ambiguities Spec Kit's clarify step is meant to surface and resolve.
+6. Run `/speckit.plan`, `/speckit.tasks`, and `/speckit.implement` per epic as normal. Because the backend is a separately-owned Laravel service that is already built and tested (see §7.2), plans for Sprints 3–6 should treat "extend the Laravel API" and "extend the Next.js frontend" as two coordinated but separately-planned tracks within the same feature, not a single full-stack scaffold.
+7. Keep this PRD as the versioned source; when a story's acceptance criteria change, edit this file first and re-run the affected `/speckit.specify` → `/speckit.plan` → `/speckit.tasks` chain, per Spec Kit's "spec is the authority, re-derive" model.
+
+---
+
+## 1. Product Overview
+
+HealthyLife AI is an AI-powered health and nutrition platform that helps users monitor their daily nutrition, understand their eating habits, and move toward a healthier lifestyle through personalized recommendations. Users record meals, get their daily nutritional needs calculated automatically, track health progress (including body weight) over time, and receive AI-generated insights based on their personal health profile and dietary behavior.
+
+HealthyLife AI provides wellness and nutrition guidance only. **It does not provide medical diagnosis or replace professional healthcare advice.**
+
+## 2. Problem Statement
+
+Maintaining a healthy lifestyle is increasingly difficult due to unhealthy eating habits, low nutritional awareness, and a lack of personalized guidance. Many existing nutrition apps let users log meals or count calories, but most stop at data recording rather than turning that data into meaningful, personalized insight that actually changes behavior.
+
+## 3. Goals & Objectives
+
+**Main objective:** design, develop, and deploy an AI-powered health and nutrition platform within six Agile sprints that lets users monitor nutritional habits, calculate daily nutritional requirements, track health progress, and receive personalized AI-generated recommendations — through responsive web and mobile applications supporting Arabic and English.
+
+**Specific objectives (SMART, by sprint):**
+
+| # | Objective | Target |
+|---|---|---|
+| 1 | Secure user authentication (register, log in) | End of Sprint 1 |
+| 2 | Personal & health profile creation with full validation | End of Sprint 2 |
+| 3 | Accurate daily calorie & macronutrient calculation from the health profile | During Sprint 2 |
+| 4 | Record, edit, search, and manage daily meals with nutritional calculation | End of Sprint 3 |
+| 5 | Dashboards and interactive charts for nutrition/health progress | End of Sprint 4 |
+| 6 | Personalized AI-powered health recommendations from meal history + profile | During Sprint 5 |
+| 7 | Seamless Arabic/English switching across web and mobile | Before project completion |
+| 8 | Responsive web + mobile apps integrated with a centralized backend | End of project |
+| 9 | Administrator dashboard for users, food categories, food database | Before final deployment |
+| 10 | Scalable, maintainable, fully tested & documented architecture | End of Sprint 6 |
+
+## 4. Success Metrics
+
+Pulled from the SRS's non-functional targets (see §8 for the full list) and the User Story catalog's Definition of Done — these are the metrics a `/speckit.analyze` pass or a UAT plan should check against:
+
+- ≥ 90% of test users complete their primary task without assistance; a new user completes registration + health profile in ≤ 5 minutes (NFR-03).
+- ≤ 3 second response time under up to 100 concurrent users; primary screens load in ≤ 5 seconds (NFR-01).
+- ≤ 1% failure rate on critical operations (NFR-04).
+- ≥ 99% availability during normal service hours (NFR-05).
+- ≥ 80% unit test coverage on critical business components (NFR-07).
+- AI recommendation and nutrition-calculation requests complete in ≤ 5 seconds under normal load.
+
+## 5. Users & Stakeholders
+
+| ID | Stakeholder | Level | Role | Expectations |
+|---|---|---|---|---|
+| ST-01 | Registered User | Primary | Uses the platform: manages profile, tracks meals/weight, receives insights | A secure, user-friendly, accurate, responsive platform with personalized recommendations |
+| ST-02 | System Administrator | Primary | Manages users, food database, categories, reports | Full administrative control, secure access, reliable management |
+| ST-03 | Development Team | Secondary | Analyzes, designs, implements, tests, deploys | Clear requirements, stable architecture, successful delivery |
+| ST-04 | Project Supervisor | Secondary | Reviews docs, evaluates sprint deliverables | Complete, well-documented, high-quality delivery |
+| ST-05 | Project Owner (Training Organization) | Secondary | Approves scope, monitors progress | A successful system meeting internship objectives |
+| ST-06 | Nutrition Specialists *(future)* | Tertiary | Would review user nutrition data, provide dietary consultation | Accurate data, analysis tools *(not in current scope)* |
+| ST-07 | Healthcare Organizations *(future)* | Tertiary | Potential future integration partner | Scalable, secure platform *(not in current scope)* |
+
+Primary persona for all Sprint 1–2 stories below: **Registered User** — a health-conscious individual (Arabic or English speaking) with basic smartphone/web literacy and a reasonably stable internet connection, who wants an accurate, judgment-free way to understand and act on their nutrition data.
+
+## 6. Scope
+
+### 6.1 In Scope
+User registration & secure authentication (JWT) · user profile management · health profile management · daily nutrition calculator · body-weight tracking · meal tracking · food search · dashboard & statistics · AI-generated health insights · Arabic/English multi-language support · responsive web application · Flutter mobile application *(see §7.1 for the actual current stack)* · administrator dashboard.
+
+### 6.2 Out of Scope (this release)
+Online medical consultations · food image analysis · smart wearable integration · online payments · meal delivery integration · social media integration.
+
+## 7. Technical Reality & Constraints
+
+> **This section supersedes SRS §1.8–§1.9 for anything already built.** The original SRS specified a React web app + Flutter mobile app on Laravel SQL Server. The team pivoted for the actual build. Feed *this* section, not the SRS's tech chapter, into `/speckit.constitution` and `/speckit.plan`.
+
+### 7.1 Actual stack in use
+
+| Layer | Planned in SRS | **Actually built** |
+|---|---|---|
+| Web frontend | React 19 | **Next.js (App Router, TypeScript, Tailwind CSS v4)** — `healthylife-ai-web` repo |
+| Mobile frontend | Flutter 3.x | Not yet started — still open for Sprint-by-sprint planning; revisit stack choice before Sprint 3 |
+| Backend | Laravel API (13) | **Laravel**, deployed at `https://backend-repository-production.up.railway.app/api`, tested via Postman |
+| Database | SQL Server | Managed by the Laravel backend team; not directly owned by the frontend track |
+| Auth | JWT (as specified) | **Confirmed: JWT.** Access token returned as `authorization.access_token` in the response body, sent as `Authorization: Bearer <token>`. Refresh token is a rotating, one-time-use, HttpOnly cookie (`POST /auth/refresh`). Account locks for 15 minutes after 5 failed login attempts (429 response) — matches SRS NFR-02. |
+| Localization | react-i18next or similar | Custom lightweight `LocaleProvider` (ar/en dictionaries, RTL via `<html dir>`), synced server-side via `PATCH /user/locale` |
+| Interface design | Stitch prototyping tool | Stitch design system already produced and implemented ("Calm Data" style: color tokens, spacing, radii — already ported into Tailwind config) |
+
+**Implication for `/speckit.plan`:** the backend is a separate, already-implemented, already-tested service. Plans for Sprints 3–6 should not scaffold backend infrastructure from scratch — they should (a) confirm/extend the Laravel API contract with the backend team, then (b) plan the Next.js integration against that contract, treating the Laravel API as an external dependency with its own release cadence.
+
+### 7.2 Confirmed backend API surface (Sprints 1–2, from the team's Postman collection)
+
+| Endpoint | Method | Auth | Notes |
+|---|---|---|---|
+| `/auth/register` | POST | — | `full_name, email, password, password_confirmation, preferred_language?`. Auto-logs in on success. |
+| `/auth/login` | POST | — | `email, password`. 429 after 5 failed attempts (15 min lock). |
+| `/auth/logout` | POST | Bearer | Revokes refresh token, invalidates JWT. |
+| `/auth/refresh` | POST | Cookie (`refresh_token`) | Rotates refresh token, issues new access token. Detects token-theft replay. |
+| `/user/locale` | PATCH | Bearer | `preferred_language: ar\|en`. |
+| `/profile` | POST | Bearer | Health profile create/update. Accepts **metric** (`height_cm`, `weight_kg`) or **imperial** (`height_ft`+`height_in`, `weight_lb`) units. |
+| `/weight-logs/{id}` | PUT | Bearer | `weight_kg, recorded_date`. **Confirmed.** |
+| `/weight-logs` | POST, GET | Bearer | **Unconfirmed** — left as empty placeholders in the Postman collection. Frontend currently assumes standard Laravel REST conventions (create/list). **Must be confirmed with the backend team before Sprint 3 planning locks this in** (see §15, Open Questions). |
+| *(none yet)* `/nutrition/daily-needs` or similar | — | — | **Does not exist yet.** US-03 (daily calorie/macro calculation) is currently computed **client-side** in the Next.js app (Mifflin-St Jeor formula) as a stand-in. This is a real gap to close — see §15. |
+
+### 7.3 Known integration gaps vs. this PRD's scope
+
+- **FR-01d (password reset)** is in the SRS and in the User Story catalog's US-01, but is **not yet implemented** in the current frontend (Sprint 1 shipped register/login/logout only) and does not appear in the Postman collection. Needs its own spec pass before it can be considered part of "Sprint 1, done."
+- **Weight-log create/list routes** are unconfirmed (§7.2). Frontend behavior here is a best-effort assumption, not a verified contract.
+- **Daily nutrition calculation** (FR-03/US-03) has no backend endpoint yet; frontend computes it locally as a fallback.
+- **Mobile (Flutter) app**: not started. FR-10 (cross-platform sync) and NFR-08 (compatibility) currently apply to the web app only.
+
+---
+
+## 8. Global Non-Functional Requirements
+
+These apply across every epic and should seed `/speckit.constitution` directly — they are project-wide constraints, not per-feature choices.
+
+| ID | Category | Requirement | Target / Measurement |
+|---|---|---|---|
+| NFR-01 | Performance | Response time, throughput, load | ≤ 3s response @ ≤100 concurrent users; primary screens load ≤ 5s; nutrition/AI calc ≤ 5s |
+| NFR-02 | Security | Authentication, authorization, data-in-transit protection | JWT auth, RBAC, HTTPS/TLS 1.2+, 15-min lockout after 5 failed logins |
+| NFR-03 | Usability | Ease of learning and interaction | ≥90% task completion unassisted; registration + health profile ≤5 min |
+| NFR-04 | Reliability | Correct, consistent operation, no partial/duplicate records | Failure rate ≤1% on critical ops |
+| NFR-05 | Availability | Uptime and service continuity | ≥99% availability; maintenance announced ≥24h ahead |
+| NFR-06 | Scalability | Growth without architecture redesign | 100 → 10,000 active users; ≤200 concurrent requests; 1,000,000 meal records |
+| NFR-07 | Maintainability | Modular, testable code | Approved coding standards; ≥80% unit test coverage on critical components |
+| NFR-08 | Compatibility | Supported platforms | Windows, Android, Chrome/Edge/Firefox/Safari (current + 2 previous versions); usable on desktop/tablet/mobile |
+| NFR-09 | Data Integrity | Validation before persistence | Type/format/range/uniqueness validation; transactional consistency |
+| NFR-10 | Privacy | Minimal collection, role-scoped access | Collect only what's needed; access restricted by authenticated role; documented retention/deletion policy |
+| NFR-11 | Backup & Recovery | Protection against data loss | Daily automated backup; RPO ≤24h; RTO ≤2h; restore test every 3 months |
+| NFR-12 | Accessibility | Inclusive UI | Labels/alt-text on interactive controls; full keyboard operability; WCAG 2.1 AA where applicable |
+
+Cross-cutting user-facing framing of the same requirements (useful verbatim for a constitution's "principles" list) is in §12 (US-13–US-20).
+
+## 9. Data Entities (Domain Glossary)
+
+Referenced by the Traceability Matrix (§13) and by each epic below — this is the shared vocabulary `/speckit.plan` should use for `data-model.md`, not a final schema (the backend owns the actual schema).
+
+| Entity | Description | Owning Epic |
+|---|---|---|
+| **User** | Account identity: name, email, password hash, `preferred_language`, role (user/admin) | Epic 1 |
+| **UserToken** | JWT access token + rotating refresh token pair per session | Epic 1 |
+| **HealthProfile** | Age, gender, height, weight (metric or imperial), activity level, goal, dietary preference, health conditions, allergies — one per user | Epic 2 |
+| **NutritionTarget** | Derived daily calorie + macronutrient (protein/carbs/fats) targets, recalculated whenever `HealthProfile` changes | Epic 2 |
+| **WeightLog** | Timestamped body-weight entries per user, feeds the dashboard's weight-trend chart | Epic 2 |
+| **FoodCategory** | Grouping for food items (admin-managed) | Epic 3 / 6 |
+| **Food** | Searchable food item with nutritional data per serving | Epic 3 / 6 |
+| **Meal** | A logged eating event (date/time, meal type) containing one or more `MealItem`s | Epic 3 |
+| **MealItem** | A `Food` + quantity within a `Meal` | Epic 3 |
+| **AIInsight** | Generated recommendation tied to a user, their `HealthProfile`, and recent `Meal` history | Epic 5 |
+| **Session** | Cross-device session/account-sync record | Epic 4 |
+
+## 10. Roadmap: Milestones & Sprints Overview
+
+| Milestone | Sprints | Goal | Status |
+|---|---|---|---|
+| **M1 — User Identity & Personalization** | Sprint 1–2 | Account creation + the personal/health data needed before the app is useful | **Implemented** (Next.js + Laravel, live) |
+| **M2 — Nutrition Tracking, Progress & Platform Reach** | Sprint 3–4 | The daily core loop: log food, see progress, reach users on web/mobile in both languages | Planned |
+| **M3 — Intelligent Guidance & Operations** | Sprint 5–6 | AI layer turning tracked data into recommendations, plus admin operations | Planned |
+
+| Sprint | Milestone | Duration | Epic (§11) | Story Points |
+|---|---|---|---|---|
+| Sprint 1 — Foundation & Authentication | M1 | 1.5 wks | §11.1 | 10 |
+| Sprint 2 — User & Health Profile | M1 | 1.5 wks | §11.2 | 11 |
+| Sprint 3 — Food Database & Meal Tracking | M2 | 1.5 wks | §11.3 | 16 |
+| Sprint 4 — Dashboard & Reporting | M2 | 1.5 wks | §11.4 | 15 |
+| Sprint 5 — AI Health Insights | M3 | 1 wk | §11.5 | 8 |
+| Sprint 6 — Admin, Testing & Deployment | M3 | 1 wk | §11.6 | 21 |
+| Cross-cutting (NFR stories, §12) | — | — | — | 34 |
+
+**Grand total: ~115 story points** (81 core-FR-linked + 34 cross-cutting NFR-linked). Story points above use the Milestones document's per-sprint breakdown (US-01a/b split) reconciled with the User Story catalog's NFR and admin/testing stories — see §16 for reconciliation notes.
+## 11. Feature Epics
+
+Each epic below is sized to be fed to a single `/speckit.specify` run. Acceptance criteria use Given/When/Then so they translate directly into spec.md's requirements and, later, into test cases.
+
+---
+
+### 11.1 Epic 1 — Foundation & Authentication (Sprint 1) — **Status: Implemented**
+
+**Sprint goal:** set up the project repository, environment, and localization framework; deliver secure authentication so users can register, log in, and log out in Arabic or English.
+
+**Definition of Done:** repo/CI/coding standards in place · registration, login, logout work end-to-end and pass QA on web (and mobile, when built) · Arabic/English localization verified on all Sprint 1 screens.
+
+**Current implementation notes:** live in the Next.js app at `/`, `/register`, `/login`; wired to `POST /auth/register`, `POST /auth/login`, `POST /auth/logout`, `POST /auth/refresh`. Language toggle syncs to `PATCH /user/locale`. **Password reset (FR-01d) is not implemented** — treat as a follow-up spec, not covered by the acceptance criteria below.
+
+#### US-01a — User Registration
+*Related FR: FR-01a · Story Points: 5 · Dependencies: none*
+
+> As a new user, I want to create an account using my email and password, so that I can securely access the HealthyLife AI platform.
+
+| AC | Given | When | Then |
+|---|---|---|---|
+| AC-1 | A visitor is on the registration screen | They submit a unique email + a password meeting minimum strength rules | The system creates the account and logs them in automatically |
+| AC-2 | A visitor submits registration | The email is already registered | The system rejects it and displays an error, prompting a different email |
+| AC-3 | A visitor submits registration | The password is weak | The system displays password strength requirements before allowing submission |
+
+#### US-01b — User Login & Localization
+*Related FR: FR-01b, FR-01c, FR-09 · Story Points: 5 · Dependencies: US-01a*
+
+> As a registered user, I want to log in with my credentials and choose my preferred language (Arabic or English), so that I can access my account and use the platform in the language I understand best.
+
+| AC | Given | When | Then |
+|---|---|---|---|
+| AC-1 | A registered user is on the login screen | They submit valid email + password | The system authenticates via JWT and grants access to the dashboard |
+| AC-2 | A registered user submits login | Credentials are invalid | The system shows a generic error without revealing which field was wrong |
+| AC-3 | Any user | They toggle the language switch | The interface reloads in the selected language and text direction (RTL/LTR) |
+| AC-4 | A user has 5 consecutive failed login attempts | The 5th failure occurs | The account locks for 15 minutes (HTTP 429) |
+
+**Use Case UC-01 (Register / Login / Reset Password)** — Primary actor: New/Registered User. Precondition: none (register) or account exists (login/reset). Postcondition: user holds a valid authenticated session, or password is reset.
+- *Main flow:* open auth screen → choose register/login/reset → enter details → submit → system validates → system creates account / authenticates / updates password → issues session token, shows dashboard (or confirms reset).
+- *Alternative — duplicate email at registration:* system detects duplicate → shows notice → redirects to login/recovery.
+- *Exception — auth failure:* invalid credentials/validation error → nothing is created/started/reset → clear error shown, retry allowed → after 5 consecutive failed logins, 15-minute lock.
+
+**Data entities:** `User`, `UserToken`.
+
+---
+
+### 11.2 Epic 2 — User & Health Profile (Sprint 2) — **Status: Implemented**
+
+**Sprint goal:** let users manage their personal and health profile; have the system calculate personalized daily calorie/macronutrient targets.
+
+**Definition of Done:** health profile form validates all fields and persists correctly · calorie/macro calculations verified against a reference formula · profile updates trigger recalculation without manual refresh.
+
+**Current implementation notes:** live as a 4-step wizard (`/setup/step-1` … `/setup/step-4` → `/setup/results`) wired to `POST /profile` (metric or imperial payload, matching the confirmed backend contract). Weight log lives at `/weight`, calling `POST/GET /weight-logs` and `PUT /weight-logs/{id}` — **the create/list routes are an unconfirmed assumption** (§7.2/§15). Nutrition target calculation (US-03) currently runs **client-side** as a stand-in for a not-yet-existing backend endpoint (§7.2/§15) — recalculation on profile update *is* implemented (client recomputes immediately after `POST /profile` succeeds).
+
+#### US-02 — Create Health Profile
+*Related FR: FR-02b · Story Points: 5 · Dependencies: US-01a/US-01b*
+
+> As a registered user, I want to enter my age, gender, height, weight, activity level, and goal, so that the system can build my personal health profile.
+
+| AC | Given | When | Then |
+|---|---|---|---|
+| AC-1 | A logged-in user has no health profile yet | They fill all required fields and submit | The system saves the profile and marks it complete |
+| AC-2 | A user is editing their profile | A required field is left empty | The system highlights the missing field and blocks submission |
+| AC-3 | A user is editing their profile | They submit invalid data (e.g., negative weight) | The system rejects the change with a validation message, does not save |
+| AC-4 | A user has an existing profile | They update a field and save | The system saves the change and reflects it immediately across the app |
+
+**Use Case UC-02 (Create and Update Health Profile)** — Actor: Registered User. Precondition: authenticated. Postcondition: profile saved and available to other modules (nutrition targets).
+- *Main flow:* open profile screen → enter/edit age, gender, height, weight, goal → submit → system validates required fields + value ranges → saves → confirms and triggers nutrition-target recalculation (UC-03).
+- *Alternative — partial save:* optional fields left empty but all required fields complete → system accepts, marks profile complete.
+- *Exception — invalid data:* out-of-range/invalid value (e.g., negative weight) → rejected, validation message shown next to the field, not saved.
+
+#### US-03 — Calculate Daily Nutrition Needs
+*Related FR: FR-03 · Story Points: 3 (Milestones doc) / 5 (User Story catalog) · Dependencies: US-02*
+
+> As a user with a completed health profile, I want the system to calculate my daily calorie and macronutrient requirements, so that I know how much I should eat to reach my goal.
+
+| AC | Given | When | Then |
+|---|---|---|---|
+| AC-1 | The user's health profile is complete | They open or update the profile | The system calculates and displays daily calorie + macronutrient targets |
+| AC-2 | The user's health profile is incomplete | They try to view targets | The system prompts them to complete the missing fields first |
+| AC-3 | The user updates a profile value (e.g., weight) | The change is saved | The system recalculates the daily targets automatically |
+
+**Use Case UC-03 (Calculate Daily Nutrition Targets)** — Actor: Registered User. Precondition: complete health profile. Postcondition: daily calorie/macro targets calculated and stored.
+- *Main flow:* profile created/updated (or targets screen opened) → system retrieves age/gender/height/weight/activity/goal → applies calculation formula → stores targets → displays them.
+- *Alternative — goal change:* goal changes (e.g., maintenance → weight loss) → targets recalculate immediately, updated targets shown.
+- *Exception — incomplete profile:* targets screen opened before profile complete → missing fields detected → user prompted to complete profile first.
+
+> ⚠️ **Spec note:** as of this PRD, this calculation is a client-side stand-in (Mifflin-St Jeor formula, see §7.2). Re-specify this story once the backend exposes a real endpoint so the formula, edge cases, and rounding rules live in one authoritative place.
+
+#### US-12 — Log Body Weight Over Time
+*Related FR: FR-12 · Story Points: 3 · Dependencies: US-02*
+
+> As a registered user, I want to log my current body weight periodically, so that I can track my progress toward my health goal over time.
+
+| AC | Given | When | Then |
+|---|---|---|---|
+| AC-1 | A user is on the weight log screen | They enter a valid weight value and submit | The system saves a timestamped entry and updates the weight-trend chart |
+| AC-2 | A user has a previously logged entry | They edit and confirm a new value | The system updates the entry and recalculates the trend |
+| AC-3 | A user submits a weight value | The value is negative, zero, or unrealistic | The system rejects the entry with a validation message, does not save |
+
+**Use Case UC-12 (Log Body Weight Over Time)** — Actor: Registered User. Precondition: authenticated, has an active health profile. Postcondition: timestamped weight entry saved and reflected in the dashboard's weight-trend chart.
+- *Main flow:* open weight log screen → enter current weight → submit → system validates it's a realistic positive number → saves with current date → updates trend chart.
+- *Alternative — edit a past entry:* open a previous entry from history → edit value → confirm → system updates entry and recalculates trend.
+- *Exception — invalid value:* negative/zero/unrealistic weight → rejected, validation message shown, not saved.
+
+**Data entities:** `HealthProfile`, `NutritionTarget`, `WeightLog`.
+
+---
+
+### 11.3 Epic 3 — Food Database & Meal Tracking (Sprint 3) — **Status: Planned**
+
+**Sprint goal:** build food search and meal tracking so users can log, edit, and remove meals with accurate nutrition calculations.
+
+**Definition of Done:** food search returns accurate results within acceptable response time · add/edit/delete meal operations covered by automated tests and pass QA · daily nutrition totals stay consistent after any meal change.
+
+#### US-04 — Search Food Items
+*Related FR: FR-04 · Story Points: 3 · Dependencies: none (can start in parallel with US-05 backend work)*
+
+> As a user, I want to search the food database by name, so that I can quickly find the food item I ate.
+
+| AC | Given | When | Then |
+|---|---|---|---|
+| AC-1 | A user is logging a meal | They type a search term | The system returns matching food items as they type |
+| AC-2 | A user searches | No food item matches | The system shows a "No Results Found" message |
+| AC-3 | Search results are shown | The user views a result | Calories and macronutrients are shown for each item |
+| AC-4 | A user has search results | They select one | The meal entry pre-fills with that food's nutritional values |
+
+#### US-05 — Log, Edit, and Delete Meals
+*Related FR: FR-05a, FR-05b, FR-05c, FR-06 · Story Points: 8 · Dependencies: US-04*
+
+> As a user, I want to add, edit, and delete meals from my daily log, so that my nutrition tracking stays accurate and up to date.
+
+| AC | Given | When | Then |
+|---|---|---|---|
+| AC-1 | A user selects a food item and enters a quantity | They submit | The system saves the meal, calculates calories/protein/carbs/fats, updates daily totals |
+| AC-2 | A user has an existing meal entry | They edit quantity or meal type | The system recalculates nutrition totals accordingly |
+| AC-3 | A user has an existing meal entry | They delete it | The system removes it and updates daily nutrition totals |
+| AC-4 | A user submits a meal | Required information is missing | The system shows a validation error, does not save |
+
+**Use Case UC-06 (Automatic Meal Nutrition Calculation)**, linked to US-05/US-06: on a meal save event → retrieve nutrition data per food item → calculate meal totals (calories/protein/carbs/fats) → compare against daily targets (UC-03) → store results, update daily summary.
+
+**Data entities:** `Food`, `FoodCategory`, `Meal`, `MealItem`, `NutritionTarget`.
+
+---
+
+### 11.4 Epic 4 — Dashboard & Reporting, Platform Reach (Sprint 4) — **Status: Planned**
+
+**Sprint goal:** deliver an interactive dashboard visualizing consumed/remaining calories, weight progress, and weekly nutrition trends; ensure the app reaches users consistently across platforms and languages.
+
+**Definition of Done:** dashboard loads within 5s and reflects real-time meal data · weekly charts render correctly across ≥4 weeks of historical data · dashboard/charts verified on web (and mobile, when built).
+
+#### US-07 — View Nutrition Dashboard
+*Related FR: FR-07 · Story Points: 5 · Dependencies: US-05*
+
+> As a user, I want to see my consumed and remaining calories for the day, so that I can track how well I am meeting my daily nutrition goal.
+
+| AC | Given | When | Then |
+|---|---|---|---|
+| AC-1 | A user opens the dashboard | — | Consumed calories, remaining calories, and macro breakdown for today are displayed |
+| AC-2 | The dashboard is open | A meal is logged, edited, or deleted | The dashboard refreshes automatically |
+| AC-3 | No meals logged yet today | The dashboard is opened | The full daily target is shown with zero consumption |
+| AC-4 | The dashboard is opened | — | It loads within 5 seconds under normal conditions |
+
+#### US-07b — View Weekly Progress Charts
+*Related FR: FR-07 · Story Points: 5 · Dependencies: US-07, US-12*
+
+> As a user, I want to view weekly charts of my weight progress and nutrition history, so that I can understand my long-term progress toward my goal.
+
+| AC | Given | When | Then |
+|---|---|---|---|
+| AC-1 | A user opens the progress section | — | Weekly charts render from logged data (calorie intake + weight trend) |
+| AC-2 | Weekly charts are shown | The user selects a previous week | The corresponding historical chart is displayed |
+| AC-3 | No data exists for the selected week | The week is selected | An empty state is shown with guidance to log data |
+
+#### US-09 — Switch Between Arabic and English
+*Related FR: FR-09 · Story Points: 3 (part of Sprint 4 platform-reach scope) · Dependencies: none — largely delivered in Sprint 1/2, verify end-to-end here*
+
+> As a user, I want to switch the app's language and reading direction at any time, so that I can use the platform comfortably in Arabic or English.
+
+Already functionally covered by US-01b's AC-3; this story exists at the catalog level to make FR-09 independently traceable and testable across every screen shipped so far, not just auth.
+
+#### US-10 — Access My Account Across Web and Mobile
+*Related FR: FR-10 · Story Points: 5 (part of Sprint 4 scope) · Dependencies: mobile app existing (currently not started, §7.1)*
+
+> As a user, I want my account and data to stay in sync whether I use the web or mobile app, so that I have a consistent experience everywhere.
+
+**Note:** blocked on the mobile app not yet existing (§7.1). When mobile work is scheduled, this story's acceptance criteria should assert: (1) the same credentials authenticate on both clients, (2) a change made on one client (e.g., a logged meal) is visible on the other without manual refresh beyond a normal reload, (3) the centralized Laravel backend is the single source of truth for both.
+
+**Data entities:** `Meal`, `MealItem`, `WeightLog`, `NutritionTarget`, `Session`.
+
+---
+
+### 11.5 Epic 5 — AI Health Insights (Sprint 5) — **Status: Planned**
+
+**Sprint goal:** integrate an AI Health Insights engine so the system can analyze each user's data and generate personalized, actionable daily recommendations.
+
+**Definition of Done:** recommendations generate correctly for users with both rich and limited logged data · AI response time ≤5s under normal load · insights section verified on web (and mobile) in Arabic and English.
+
+#### US-08a — Generate AI Health Insights
+*Related FR: FR-08 · Story Points: 8 · Dependencies: US-02, US-05 (needs profile + meal history to reason over)*
+
+> As a user, I want the system to analyze my health profile and meal history, so that I receive personalized recommendations to improve my eating habits.
+
+| AC | Given | When | Then |
+|---|---|---|---|
+| AC-1 | A user has logged data | The insight generation runs | At least one personalized recommendation is generated per day |
+| AC-2 | An insight request is made | Normal operating conditions | The request completes within 5 seconds |
+| AC-3 | A recommendation is generated | — | It is based on the user's health profile, goal, and recent meal history |
+
+**Use Case UC-08:** *Main flow:* sufficient logged data → system generates and displays a personalized daily insight. *Alternative:* limited logged data → general recommendation + prompt to log more. *Exception:* AI service temporarily unavailable → friendly error shown, automatic retry.
+
+#### US-08b — View Personalized Recommendations
+*Related FR: FR-08 · Story Points: 3 · Dependencies: US-08a*
+
+> As a user, I want to view my AI-generated recommendations in a dedicated section, so that I can easily act on the advice given to me.
+
+| AC | Given | When | Then |
+|---|---|---|---|
+| AC-1 | A user opens the insights section | — | The latest AI-generated recommendations are displayed clearly |
+| AC-2 | New data has been logged | A new day begins | Recommendations refresh based on the latest data |
+| AC-3 | A user wants history | They browse past recommendations | Previously generated insights are viewable |
+| AC-4 | No recommendations exist yet | The insights section is opened | A message encourages the user to log meals first |
+
+**Data entities:** `AIInsight`, `HealthProfile`, `Meal`.
+
+**Constraint carried from §1.4/§4.8 of the source docs:** the AI module depends on predefined health/nutrition data and an external AI service being available and licensed before this sprint starts — flag as a pre-sprint dependency, not an in-sprint risk.
+
+---
+
+### 11.6 Epic 6 — Administration, Testing & Deployment (Sprint 6) — **Status: Planned**
+
+**Sprint goal:** test the complete system end-to-end, fix issues, optimize performance, deploy to a live environment, and finalize documentation; ship the admin panel.
+
+**Definition of Done:** all critical/high-priority defects resolved and verified · production deployment live, stable, backed up automatically · technical/user documentation complete and reviewed · admin panel functional, access restricted to administrators.
+
+#### US-11 — Manage Users and Food Database (Admin)
+*Related FR: FR-11a, FR-11b, FR-11c · Story Points: 8 · Dependencies: US-01 (auth/roles), US-04 (food database)*
+
+> As a system administrator, I want to manage user accounts, food categories, and food items through an administration panel, so that the platform's data stays accurate and user accounts stay under control.
+
+| AC | Given | When | Then |
+|---|---|---|---|
+| AC-1 | An admin is in the panel | They view/activate/deactivate a user account | The system applies the change |
+| AC-2 | An admin is in the panel | They add/edit/remove a food category or item | The system saves the change and makes it available to all users |
+| AC-3 | Any admin action is attempted | The user is not an administrator | Access is denied and the attempt is logged |
+
+**Use Case UC-11:** *Main flow:* admin updates a food item → saved, available platform-wide. *Alternative:* admin deactivates a user → access revoked on their next request. *Exception:* non-admin attempts admin panel → access denied, attempt logged.
+
+#### US-21 — End-to-End System Testing
+*Related FR: NFR-04 · Story Points: 8 · Dependencies: all prior epics functionally complete*
+
+> As the development team, I want to run functional, integration, and regression tests across all modules, so that the platform is reliable and free of critical defects before release.
+
+| AC | Given | When | Then |
+|---|---|---|---|
+| AC-1 | The full MVP feature set exists | Functional testing runs | Authentication, profile, tracking, dashboard, and AI insights all pass |
+| AC-2 | Critical operations are exercised | Under test load | Failure rate stays ≤1% |
+| AC-3 | Testing surfaces defects | Critical/high-priority bugs are found | All are resolved before deployment |
+
+#### US-22 — Deployment & Documentation
+*Related FR: NFR-05, NFR-11 · Story Points: 5 · Dependencies: US-21*
+
+> As the development team, I want to deploy the platform to a production environment and finalize the technical documentation, so that the system is live, stable, and maintainable going forward.
+
+| AC | Given | When | Then |
+|---|---|---|---|
+| AC-1 | The tested build is ready | It is deployed | The production environment maintains ≥99% availability |
+| AC-2 | The system is live | — | It is accompanied by up-to-date technical and user documentation |
+| AC-3 | The deployment is live | Backup jobs run | Automated backups run at least once every 24 hours |
+
+**Data entities:** `User`, `FoodCategory`, `Food`.
+
+---
+
+## 12. Cross-Cutting Non-Functional User Stories (US-13–US-20)
+
+These apply platform-wide rather than to a single sprint; no `/speckit.specify` run is needed per-story — instead, fold their acceptance criteria into `/speckit.constitution` and re-check every epic's plan against them.
+
+| ID | Title | Covers | Target |
+|---|---|---|---|
+| US-13 | Fast, Responsive Experience | NFR-01 | ≤3s response @100 concurrent users; primary screens ≤5s |
+| US-14 | Secure and Private Data Handling | NFR-02, NFR-10 | HTTPS/TLS 1.2+, RBAC, 15-min lockout, minimal data collection |
+| US-15 | Easy, Accessible Onboarding | NFR-03, NFR-12 | ≥90% unassisted task completion, ≤5-min onboarding, WCAG 2.1 AA |
+| US-16 | Reliable and Recoverable Service | NFR-04, NFR-11 | ≤1% failure rate; daily backups; RPO ≤24h, RTO ≤2h |
+| US-17 | Always-Available Platform | NFR-05 | ≥99% availability; maintenance announced ≥24h ahead |
+| US-18 | Platform that Grows With Its Users | NFR-06 | 100 → 10,000 users; up to 1,000,000 meal records |
+| US-19 | Maintainable, Testable Codebase | NFR-07 | Modular structure; ≥80% test coverage on critical components |
+| US-20 | Consistent Experience Across Devices, With Trustworthy Data | NFR-08, NFR-09 | Cross-platform usability; validation before persistence |
+
+## 13. Traceability Matrix
+
+| FR | User Story | Sprint | Milestone | Related Entities | Use Case | Spec Kit feature dir |
+|---|---|---|---|---|---|---|
+| FR-01a/b/c | US-01a, US-01b | Sprint 1 | M1 | User, UserToken | UC-01 | `001-foundation-auth` |
+| FR-01d | *(US-01, unimplemented slice)* | — | M1 | User | UC-01 | `001-foundation-auth` (follow-up) |
+| FR-02b | US-02 | Sprint 2 | M1 | User, HealthProfile | UC-02 | `002-health-profile` |
+| FR-03 | US-03 | Sprint 2 | M1 | HealthProfile, NutritionTarget | UC-03 | `002-health-profile` |
+| FR-12 | US-12 | Sprint 2 | M1 | User, WeightLog | UC-12 | `002-health-profile` |
+| FR-04 | US-04 | Sprint 3 | M2 | Food, FoodCategory | UC-04 | `003-food-meal-tracking` |
+| FR-05a/b/c, FR-06 | US-05 | Sprint 3 | M2 | Meal, MealItem, Food, NutritionTarget | UC-06 | `003-food-meal-tracking` |
+| FR-07 | US-07, US-07b | Sprint 4 | M2 | Meal, MealItem, WeightLog, NutritionTarget | UC-07 | `004-dashboard-reporting` |
+| FR-09 | US-09 | Sprint 4 (verify), Sprint 1 (origin) | M1/M2 | User (LanguagePreference) | UC-09 | `001-foundation-auth`, `004-dashboard-reporting` |
+| FR-10 | US-10 | Sprint 4 | M2 | User, Session | UC-10 | `004-dashboard-reporting` |
+| FR-08 | US-08a, US-08b | Sprint 5 | M3 | AIInsight, HealthProfile, Meal | UC-08 | `005-ai-insights` |
+| FR-11a/b/c | US-11 | Sprint 6 | M3 | User, FoodCategory, Food | UC-11 | `006-admin-testing-deployment` |
+| NFR-04 | US-21 | Sprint 6 | M3 | — | — | `006-admin-testing-deployment` |
+| NFR-05, NFR-11 | US-22 | Sprint 6 | M3 | — | — | `006-admin-testing-deployment` |
+| NFR-01–NFR-12 | US-13–US-20 | Cross-cutting | All | — | N/A | constitution.md |
+
+## 14. Definition of Ready / Definition of Done
+
+**Definition of Ready** (before a story enters a sprint):
+- The related FR is approved and unambiguous.
+- The story follows "As a / I want / so that" and fits within one sprint.
+- Dependencies on other stories are identified and either done or explicitly accepted as parallel work.
+- Acceptance criteria are written and peer-reviewed.
+- Any required UI/UX reference (mockup/wireframe) is available.
+- The team has agreed on an estimate.
+
+**Definition of Done** (before a story is considered complete, regardless of individual AC pass status):
+- Code is merged to main and passes CI.
+- All acceptance criteria pass manual or automated testing.
+- Unit tests exist for new logic and meet the coverage target (NFR-07, ≥80% on critical components).
+- The feature works correctly in both Arabic and English where UI is involved (FR-09).
+- The feature works correctly on both web and mobile clients where applicable (FR-10) — currently web-only until the mobile app exists (§7.1).
+- No known critical/high-severity defects remain open against the story.
+- Relevant documentation (API reference, in-app help text) is updated.
+- The Product Owner/Supervisor has reviewed and accepted the demonstrated feature.
+
+## 15. Assumptions, Risks & Open Questions
+
+### Assumptions
+- Users have basic smartphone/web literacy and a reasonably stable internet connection.
+- The food database is seeded with representative Arabic + international foods before Sprint 3 begins.
+- The AI recommendation service (internal model or external API) is available and licensed before Sprint 5 begins.
+- Team availability holds across all six sprints as planned.
+
+### Constraints
+- Six-sprint internship timeline caps scope to an MVP.
+- Small student development team, limited weekly hours.
+- AI recommendations rely on predefined health/nutrition data, not medical diagnosis or licensed clinical advice.
+- UAT uses a limited number of test users — may not represent all real-world usage.
+
+### Open Questions (resolve with `/speckit.clarify` before planning the affected epic)
+1. **Weight-log routes** — is `POST /weight-logs` (create) and `GET /weight-logs` (list) the correct contract, or does the backend use different paths/verbs? (§7.2) — *blocks finalizing Epic 2's spec as "done," not just "implemented as a best guess."*
+2. **Daily nutrition calculation endpoint** — will the backend expose `GET/POST /nutrition/daily-needs` (or similar), and if so, what formula/rounding rules should the frontend match exactly? (§7.2) — *blocks Epic 2 US-03 from being fully backend-verified.*
+3. **Password reset (FR-01d)** — not yet scoped for the frontend or confirmed in the backend's API surface. Needs its own mini-spec before it can be scheduled.
+4. **Mobile app stack** — SRS assumed Flutter; nothing has been started. Confirm before Sprint 3/4 planning whether Flutter is still the intended stack, given the web pivot from React to Next.js.
+5. **AI service selection** — which external AI API (or internal model) will power US-08a/US-08b, and what are its cost/rate-limit/availability characteristics? Needed before Sprint 5 planning.
+6. **Admin role model** — how is the `admin` role represented in the Laravel backend (a field on `User`, a separate table, Laravel policies/gates)? Needed before Epic 6 planning.
+
+## 16. Document Provenance & Reconciliation Notes
+
+This PRD consolidates three source documents plus the current codebase:
+
+- **SRS — Software Requirements Specification, Chapters 1–2 (Revised).** Source for §3 (objectives), §6 (scope), §8 (NFRs), §5 (stakeholders), and the FR numbering used throughout. Its technology chapter (§1.8–§1.9) is **explicitly superseded** by §7.1 of this PRD.
+- **Milestones (Aligned, v1.2).** Source for the sprint/milestone structure (§10), and for the Sprint 1–2 story split used in §11.1–§11.2 (`US-01a`/`US-01b` instead of a single combined `US-01`), since that split matches what was actually built.
+- **User Stories & Use Case Scenarios (Aligned, v2.3).** Source for the detailed Use Case flows (main/alternative/exception), the NFR-driven cross-cutting stories (§12, US-13–US-20), the admin/testing/deployment stories (US-11, US-21, US-22), and the Traceability Matrix skeleton (§13).
+
+**Known discrepancy between sources:** the Milestones document (v1.2) states it is cross-checked against User Stories v2.3, but the two documents assign different story-point totals to Sprint 1/2 (Milestones: `US-01a`(5) + `US-01b`(5) = 10 pts for Sprint 1, `US-02`(5)+`US-03`(3)+`US-12`(3) = 11 pts for Sprint 2; User Stories catalog: single `US-01`(8) covering register/login/logout/reset, `US-02`(5)+`US-03`(5)+`US-12`(3) = 13 pts for Sprint 2). This PRD resolves the discrepancy by **using the Milestones document's story split** (since it matches the shipped implementation) while **using the User Story catalog's richer acceptance-criteria and use-case detail** to fill in each story. If this matters for velocity tracking, treat the User Story catalog's `US-01` as the parent/epic-level record and `US-01a`/`US-01b` as its two implementation-level sub-stories.
+
+## Appendix A — Glossary
+
+| Term | Meaning |
+|---|---|
+| MVP | Minimum Viable Product — the six-sprint scope defined in §6.1 |
+| FR / NFR | Functional / Non-Functional Requirement, as numbered in the SRS |
+| US / UC | User Story / Use Case Scenario, as numbered in the User Stories & Use Case catalog |
+| RTL / LTR | Right-to-left (Arabic) / left-to-right (English) reading direction |
+| RBAC | Role-Based Access Control |
+| RPO / RTO | Recovery Point Objective / Recovery Time Objective |
+| JWT | JSON Web Token, used for stateless authentication |
