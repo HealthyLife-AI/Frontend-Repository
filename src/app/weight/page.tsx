@@ -28,7 +28,9 @@ export default function WeightLogPage() {
 
   useEffect(() => {
     listWeightLogs()
-      .then(setLogs)
+      .then((res) => {
+        setLogs(Array.isArray(res) ? res : []);
+      })
       .catch(() => setLogs([]))
       .finally(() => setLoading(false));
   }, []);
@@ -44,7 +46,7 @@ export default function WeightLogPage() {
     setError(null);
     try {
       const entry = await createWeightLog({ weight_kg: weightKg, recorded_date: date });
-      setLogs((prev) => [entry, ...prev]);
+      setLogs((prev) => [entry, ...(Array.isArray(prev) ? prev : [])]);
       setWeight("");
     } catch (err) {
       setError(extractErrorMessage(err, t.common.errorGeneric));

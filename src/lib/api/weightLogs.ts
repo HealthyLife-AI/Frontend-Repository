@@ -32,27 +32,42 @@ function unwrap<T>(data: { data: T } | T): T {
 export async function createWeightLog(
   payload: CreateWeightLogPayload,
 ): Promise<WeightLog> {
-  const { data } = await apiClient.post<{ data: WeightLog } | WeightLog>(
-    "/weight-logs",
-    payload,
-  );
-  return unwrap<WeightLog>(data);
+  const { data } = await apiClient.post<any>("/weight-logs", payload);
+  if (data && typeof data === "object" && "weight_log" in data) {
+    return data.weight_log as WeightLog;
+  }
+  if (data && typeof data === "object" && "data" in data) {
+    return data.data as WeightLog;
+  }
+  return data as WeightLog;
 }
 
 export async function listWeightLogs(): Promise<WeightLog[]> {
-  const { data } = await apiClient.get<{ data: WeightLog[] } | WeightLog[]>(
-    "/weight-logs",
-  );
-  return unwrap<WeightLog[]>(data);
+  const { data } = await apiClient.get<any>("/weight-logs");
+  if (Array.isArray(data)) {
+    return data as WeightLog[];
+  }
+  if (data && typeof data === "object") {
+    if (Array.isArray(data.weight_logs)) {
+      return data.weight_logs as WeightLog[];
+    }
+    if (Array.isArray(data.data)) {
+      return data.data as WeightLog[];
+    }
+  }
+  return [];
 }
 
 export async function updateWeightLog(
   id: number,
   payload: Partial<CreateWeightLogPayload>,
 ): Promise<WeightLog> {
-  const { data } = await apiClient.put<{ data: WeightLog } | WeightLog>(
-    `/weight-logs/${id}`,
-    payload,
-  );
-  return unwrap<WeightLog>(data);
+  const { data } = await apiClient.put<any>(`/weight-logs/${id}`, payload);
+  if (data && typeof data === "object" && "weight_log" in data) {
+    return data.weight_log as WeightLog;
+  }
+  if (data && typeof data === "object" && "data" in data) {
+    return data.data as WeightLog;
+  }
+  return data as WeightLog;
 }
