@@ -22,7 +22,7 @@ export default function SetupStep1Page() {
 
   const handleNext = () => {
     const parsedAge = Number(ageValue);
-    if (!ageValue || Number.isNaN(parsedAge) || parsedAge < 10 || parsedAge > 120) {
+    if (!ageValue || Number.isNaN(parsedAge) || parsedAge < 13 || parsedAge > 100) {
       setError("invalid_age");
       return;
     }

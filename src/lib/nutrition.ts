@@ -1,14 +1,10 @@
 import type { ActivityLevel, Gender, Goal } from "@/lib/api/profile";
 
 /**
- * US-03 (Sprint 2) asks the backend to calculate daily calorie/macro targets,
- * but no such endpoint (e.g. GET /nutrition/daily-needs) appears in the
- * team's Postman collection yet. To avoid blocking the setup → results flow,
- * this computes the same targets client-side using the standard
- * Mifflin-St Jeor formula, in the exact shape the results screen needs.
- *
- * Swap this out once the backend endpoint is confirmed: call it right after
- * saveHealthProfile() and use its response instead of calculateDailyTargets().
+ * FALLBACK ONLY — used when the API-calculated nutrition_target is
+ * unavailable (e.g. offline, or before the first successful save).
+ * The backend (POST/GET/PUT /profile) always returns the authoritative
+ * nutrition_target — prefer that everywhere possible.
  */
 
 const ACTIVITY_MULTIPLIERS: Record<ActivityLevel, number> = {
@@ -22,7 +18,7 @@ const ACTIVITY_MULTIPLIERS: Record<ActivityLevel, number> = {
 const GOAL_CALORIE_ADJUSTMENT: Record<Goal, number> = {
   lose: -500,
   maintain: 0,
-  gain: 300,
+  gain: 500, // كانت 300 — لتطابق الباك اند
 };
 
 // Matches the ratios shown on the "Your Personalized Plan" mockup.
@@ -54,7 +50,7 @@ export function calculateDailyTargets(input: {
 
   const tdee = bmr * ACTIVITY_MULTIPLIERS[activityLevel];
   const calories = Math.max(
-    1200,
+    gender === "female" ? 1200 : 1500, // كانت 1200 ثابتة للكل
     Math.round(tdee + GOAL_CALORIE_ADJUSTMENT[goal]),
   );
 

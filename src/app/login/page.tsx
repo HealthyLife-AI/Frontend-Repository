@@ -59,9 +59,9 @@ export default function LoginPage() {
 
   return (
     <main className="flex h-screen w-full overflow-hidden bg-background">
-      <div className="flex h-full w-full flex-col lg:flex-row">
-        {/* Left Side: Brand Illustration */}
-        <div className="relative hidden lg:flex lg:w-1/2 bg-brand-panel items-center justify-center p-8 overflow-hidden">
+      <div className="grid h-full w-full grid-cols-1 lg:grid-cols-2">
+        {/* Brand Illustration Panel */}
+        <div className="relative hidden lg:flex bg-brand-panel items-center justify-center p-8 overflow-hidden">
           {/* Decorative blobs */}
           <div className="pointer-events-none absolute -top-24 -start-24 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-20 -end-20 h-60 w-60 rounded-full bg-[#006B5F]/15 blur-2xl" />
@@ -80,8 +80,8 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Right Side: Form */}
-        <div className="relative flex flex-1 flex-col justify-between bg-surface p-6 sm:p-12 lg:w-1/2 overflow-y-auto">
+        {/* Form Panel */}
+        <div className="relative flex flex-col justify-between bg-surface p-6 sm:p-12 overflow-y-auto">
           {/* Header Bar */}
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-2 text-lg font-bold text-[#006B5F] lg:hidden">

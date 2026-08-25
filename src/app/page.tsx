@@ -10,9 +10,9 @@ export default function OnboardingPage() {
 
   return (
     <main className="flex h-screen w-full overflow-hidden bg-background">
-      <div className="flex h-full w-full flex-col md:flex-row">
-        {/* Left Side: Brand Illustration — rich teal gradient panel */}
-        <div className="relative flex h-[38vh] w-full items-center justify-center bg-brand-panel p-6 overflow-hidden md:h-full md:w-1/2">
+      <div className="grid h-full w-full grid-cols-1 md:grid-cols-2">
+        {/* Brand Illustration Panel */}
+        <div className="relative flex h-[38vh] md:h-full w-full items-center justify-center bg-brand-panel p-6 overflow-hidden">
           {/* Decorative blobs */}
           <div className="pointer-events-none absolute -top-20 -start-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-16 -end-16 h-56 w-56 rounded-full bg-[#006B5F]/15 blur-2xl" />
@@ -31,8 +31,8 @@ export default function OnboardingPage() {
           </div>
         </div>
 
-        {/* Right Side: Content */}
-        <div className="relative flex flex-1 flex-col justify-between bg-surface-container-lowest p-6 md:p-12 md:w-1/2 overflow-y-auto">
+        {/* Content Panel */}
+        <div className="relative flex flex-col justify-between bg-surface-container-lowest p-6 md:p-12 overflow-y-auto">
           {/* Top Bar */}
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-2 text-lg font-bold text-[#006B5F] md:hidden">
