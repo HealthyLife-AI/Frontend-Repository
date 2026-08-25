@@ -6,9 +6,10 @@ import { useTranslation } from "@/lib/i18n/LocaleProvider";
 import { AuthGuard } from "@/components/layout/AuthGuard";
 import { Button } from "@/components/ui/Button";
 import { useSetupStore } from "@/store/setupStore";
-import { getHealthProfile, type HealthProfile } from "@/lib/api/profile";
+import { getHealthProfile, type NutritionTarget } from "@/lib/api/profile";
 import { calculateDailyTargets, ftInToCm, lbToKg } from "@/lib/nutrition";
 import type { DailyTargets } from "@/lib/nutrition";
+
 
 function MacroRow({
   icon,
@@ -43,37 +44,23 @@ function MacroRow({
   );
 }
 
-/** Derive targets from the API HealthProfile (uses server-side or client-side calc). */
-function targetsFromProfile(profile: HealthProfile): DailyTargets | null {
-  // Prefer server-calculated values if present
-  if (
-    profile.daily_calorie_target &&
-    profile.daily_protein_g !== undefined &&
-    profile.daily_carbs_g !== undefined &&
-    profile.daily_fats_g !== undefined
-  ) {
-    const calories = profile.daily_calorie_target;
-    const protein_g = profile.daily_protein_g ?? 0;
-    const carbs_g = profile.daily_carbs_g ?? 0;
-    const fats_g = profile.daily_fats_g ?? 0;
-    const totalCals = protein_g * 4 + carbs_g * 4 + fats_g * 9;
-    return {
-      calories,
-      protein_g,
-      carbs_g,
-      fats_g,
-      protein_pct: totalCals > 0 ? Math.round((protein_g * 4 / totalCals) * 100) : 30,
-      carbs_pct: totalCals > 0 ? Math.round((carbs_g * 4 / totalCals) * 100) : 45,
-      fats_pct: totalCals > 0 ? Math.round((fats_g * 9 / totalCals) * 100) : 25,
-    };
-  }
+// يحوّل استجابة الباك اند الرسمية (nutrition_target) لنفس شكل DailyTargets
+function targetsFromApi(nt: NutritionTarget): DailyTargets {
+  const calories = parseFloat(nt.daily_calories);
+  const protein_g = parseFloat(nt.protein_g);
+  const carbs_g = parseFloat(nt.carbs_g);
+  const fats_g = parseFloat(nt.fat_g);
+  const totalCals = protein_g * 4 + carbs_g * 4 + fats_g * 9;
 
-  // Fall back to client-side Mifflin-St Jeor calculation
-  const { age, gender, activity_level, goal } = profile;
-  const heightCm = (profile.height_cm as number | undefined) ?? 170;
-  const weightKg = (profile.weight_kg as number | undefined) ?? 70;
-  if (!age || !gender || !activity_level || !goal) return null;
-  return calculateDailyTargets({ age, gender, heightCm, weightKg, activityLevel: activity_level, goal });
+  return {
+    calories: Math.round(calories),
+    protein_g: Math.round(protein_g),
+    carbs_g: Math.round(carbs_g),
+    fats_g: Math.round(fats_g),
+    protein_pct: totalCals > 0 ? Math.round((protein_g * 4 / totalCals) * 100) : 30,
+    carbs_pct: totalCals > 0 ? Math.round((carbs_g * 4 / totalCals) * 100) : 45,
+    fats_pct: totalCals > 0 ? Math.round((fats_g * 9 / totalCals) * 100) : 25,
+  };
 }
 
 export default function SetupResultsPage() {
@@ -81,11 +68,12 @@ export default function SetupResultsPage() {
   const router = useRouter();
   const setup = useSetupStore();
 
-  const [apiProfile, setApiProfile] = useState<HealthProfile | null>(null);
+  const [apiTarget, setApiTarget] = useState<NutritionTarget | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // If the setupStore is populated (just finished wizard), use it directly.
-  const storeTargets = useMemo(() => {
+  // Fallback فقط: تقدير محلي فوري لو ما وصلنا الرد الرسمي بعد (نادر جدًا)
+  const clientEstimate = useMemo(() => {
+    if (setup.lastNutritionTarget) return null; // عندنا رد رسمي، ما نحتاج تقدير
     if (!setup.age || !setup.gender || !setup.activityLevel || !setup.goal) return null;
     const heightCm =
       setup.heightUnit === "cm"
@@ -103,17 +91,21 @@ export default function SetupResultsPage() {
     });
   }, [setup]);
 
-  // If store is empty (e.g. navigated from dashboard sidebar), fetch from API.
+  // لو المستخدم رجع للشاشة من الداشبورد (مش من الويزارد)، اجلب البيانات الرسمية من الـ API
   useEffect(() => {
-    if (storeTargets) return; // Already have data from wizard flow
+    if (setup.lastNutritionTarget || clientEstimate) return;
     setLoading(true);
     getHealthProfile()
-      .then((profile) => setApiProfile(profile))
-      .catch(() => setApiProfile(null))
+      .then(({ nutrition_target }) => setApiTarget(nutrition_target))
+      .catch(() => setApiTarget(null))
       .finally(() => setLoading(false));
-  }, [storeTargets]);
+  }, [setup.lastNutritionTarget, clientEstimate]);
 
-  const targets: DailyTargets | null = storeTargets ?? (apiProfile ? targetsFromProfile(apiProfile) : null);
+  const targets: DailyTargets | null = setup.lastNutritionTarget
+    ? targetsFromApi(setup.lastNutritionTarget)
+    : apiTarget
+      ? targetsFromApi(apiTarget)
+      : clientEstimate;
 
   const handleEnterDashboard = () => {
     setup.reset();

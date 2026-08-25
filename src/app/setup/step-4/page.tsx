@@ -36,28 +36,29 @@ export default function SetupStep4Page() {
       const payload: ProfilePayload =
         setup.heightUnit === "cm"
           ? {
-              age: setup.age,
-              gender: setup.gender,
-              height_unit: "cm",
-              height_cm: setup.heightCm ?? 0,
-              weight_unit: "kg",
-              weight_kg: setup.weightKg ?? 0,
-              activity_level: setup.activityLevel,
-              goal: value,
-            }
+            age: setup.age,
+            gender: setup.gender,
+            height_unit: "cm",
+            height_cm: setup.heightCm ?? 0,
+            weight_unit: "kg",
+            weight_kg: setup.weightKg ?? 0,
+            activity_level: setup.activityLevel,
+            goal: value,
+          }
           : {
-              age: setup.age,
-              gender: setup.gender,
-              height_unit: "ft_in",
-              height_ft: setup.heightFt ?? 0,
-              height_in: setup.heightIn ?? 0,
-              weight_unit: "lb",
-              weight_lb: setup.weightLb ?? 0,
-              activity_level: setup.activityLevel,
-              goal: value,
-            };
+            age: setup.age,
+            gender: setup.gender,
+            height_unit: "ft_in",
+            height_ft: setup.heightFt ?? 0,
+            height_in: setup.heightIn ?? 0,
+            weight_unit: "lb",
+            weight_lb: setup.weightLb ?? 0,
+            activity_level: setup.activityLevel,
+            goal: value,
+          };
 
-      await saveHealthProfile(payload);
+      const { nutrition_target } = await saveHealthProfile(payload);
+      setup.setNutritionTarget(nutrition_target);
       useAuthStore.getState().setHasHealthProfile(true);
       router.push("/setup/results");
     } catch (err) {

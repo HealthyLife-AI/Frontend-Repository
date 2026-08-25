@@ -60,7 +60,7 @@ export default function SetupStep1Page() {
               label={t.setup.step1.age}
               type="number"
               icon="calendar_today"
-              min={10}
+              min={13}
               max={120}
               value={ageValue}
               onChange={(e) => setAgeValue(e.target.value)}
@@ -71,7 +71,7 @@ export default function SetupStep1Page() {
               <label className="mb-2 block text-xs font-medium text-on-surface-variant">
                 {t.setup.step1.gender}
               </label>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <SelectCard
                   name="gender"
                   value="female"
@@ -90,15 +90,7 @@ export default function SetupStep1Page() {
                   title={t.setup.step1.genderMale}
                   layout="column"
                 />
-                <SelectCard
-                  name="gender"
-                  value="other"
-                  checked={genderValue === "other"}
-                  onChange={(v) => setGenderValue(v as Gender)}
-                  icon="diversity_1"
-                  title={t.setup.step1.genderOther}
-                  layout="column"
-                />
+
               </div>
             </div>
           </div>

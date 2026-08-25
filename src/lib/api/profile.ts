@@ -1,6 +1,6 @@
 import { apiClient } from "./client";
 
-export type Gender = "male" | "female" | "other";
+export type Gender = "male" | "female";
 export type ActivityLevel =
   | "sedentary"
   | "light"
@@ -48,11 +48,22 @@ export type HealthProfile = {
   weight_kg?: number;
   activity_level: ActivityLevel;
   goal: Goal;
-  daily_calorie_target?: number;
-  daily_protein_g?: number;
-  daily_carbs_g?: number;
-  daily_fats_g?: number;
   [key: string]: unknown;
+};
+
+export type NutritionTarget = {
+  id: number;
+  health_profile_id: number;
+  daily_calories: string; // decimal من لارافيل بيرجع كنص، حوّله لرقم عند العرض
+  protein_g: string;
+  carbs_g: string;
+  fat_g: string;
+  calculated_at: string;
+};
+
+export type ProfileWithNutrition = {
+  profile: HealthProfile;
+  nutrition_target: NutritionTarget;
 };
 
 /**
@@ -69,22 +80,19 @@ function unwrap(data: { profile: HealthProfile } | HealthProfile): HealthProfile
 
 export async function saveHealthProfile(
   payload: ProfilePayload,
-): Promise<HealthProfile> {
-  const { data } = await apiClient.post<{ profile: HealthProfile } | HealthProfile>(
-    "/profile",
-    payload,
-  );
-  return unwrap(data);
+): Promise<ProfileWithNutrition> {
+  const { data } = await apiClient.post<ProfileWithNutrition>("/profile", payload);
+  return data;
 }
 
-/**
- * GET /profile — not present in the current Postman collection. Included
- * defensively (e.g. to resume setup or show the review step) — confirm the
- * exact route with the backend team before relying on it in production.
- */
-export async function getHealthProfile(): Promise<HealthProfile> {
-  const { data } = await apiClient.get<{ profile: HealthProfile } | HealthProfile>(
-    "/profile",
-  );
-  return unwrap(data);
+export async function updateHealthProfile(
+  payload: ProfilePayload,
+): Promise<ProfileWithNutrition> {
+  const { data } = await apiClient.put<ProfileWithNutrition>("/profile", payload);
+  return data;
+}
+
+export async function getHealthProfile(): Promise<ProfileWithNutrition> {
+  const { data } = await apiClient.get<ProfileWithNutrition>("/profile");
+  return data;
 }

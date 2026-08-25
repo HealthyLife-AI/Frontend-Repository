@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { ActivityLevel, Gender, Goal } from "@/lib/api/profile";
+import type { ActivityLevel, Gender, Goal, NutritionTarget } from "@/lib/api/profile";
 
 type HeightUnit = "cm" | "ft_in";
 type WeightUnit = "kg" | "lb";
@@ -35,6 +35,8 @@ type SetupState = {
   setActivityLevel: (activityLevel: ActivityLevel) => void;
   setGoal: (goal: Goal) => void;
   reset: () => void;
+  lastNutritionTarget: NutritionTarget | null;
+  setNutritionTarget: (target: NutritionTarget) => void;
 };
 
 const initialState = {
@@ -49,6 +51,7 @@ const initialState = {
   weightLb: null,
   activityLevel: null,
   goal: null,
+  lastNutritionTarget: null as NutritionTarget | null,
 };
 
 export const useSetupStore = create<SetupState>()(
@@ -59,6 +62,7 @@ export const useSetupStore = create<SetupState>()(
       setStep2: (data) => set(data),
       setActivityLevel: (activityLevel) => set({ activityLevel }),
       setGoal: (goal) => set({ goal }),
+      setNutritionTarget: (target) => set({ lastNutritionTarget: target }),
       reset: () => set(initialState),
     }),
     { name: "healthylife.setup" },

@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useTranslation } from "@/lib/i18n/LocaleProvider";
 import { AuthGuard } from "@/components/layout/AuthGuard";
 import { LanguageToggle } from "@/components/layout/LanguageToggle";
@@ -13,17 +12,36 @@ import { useAuthStore } from "@/store/authStore";
 import {
   getHealthProfile,
   saveHealthProfile,
+  updateHealthProfile,
   type ActivityLevel,
   type Gender,
   type Goal,
-  type HealthProfile,
+  type NutritionTarget,
 } from "@/lib/api/profile";
 import { calculateDailyTargets, ftInToCm, lbToKg } from "@/lib/nutrition";
 import { extractErrorMessage } from "@/lib/api/client";
 
+// يحوّل nutrition_target الرسمي من الباك اند لنفس شكل calculateDailyTargets المحلي
+function targetsFromApi(nt: NutritionTarget) {
+  const calories = parseFloat(nt.daily_calories);
+  const protein_g = parseFloat(nt.protein_g);
+  const carbs_g = parseFloat(nt.carbs_g);
+  const fats_g = parseFloat(nt.fat_g);
+  const totalCals = protein_g * 4 + carbs_g * 4 + fats_g * 9;
+
+  return {
+    calories: Math.round(calories),
+    protein_g: Math.round(protein_g),
+    carbs_g: Math.round(carbs_g),
+    fats_g: Math.round(fats_g),
+    protein_pct: totalCals > 0 ? Math.round((protein_g * 4 / totalCals) * 100) : 30,
+    carbs_pct: totalCals > 0 ? Math.round((carbs_g * 4 / totalCals) * 100) : 45,
+    fats_pct: totalCals > 0 ? Math.round((fats_g * 9 / totalCals) * 100) : 25,
+  };
+}
+
 export default function ProfilePage() {
   const { t } = useTranslation();
-  const router = useRouter();
   const user = useAuthStore((s) => s.user);
 
   // Form State
@@ -38,6 +56,12 @@ export default function ProfilePage() {
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>("moderate");
   const [goal, setGoal] = useState<Goal>("maintain");
 
+  // هل عنده بروفايل محفوظ أصلاً؟ يحدد إذا الحفظ القادم POST (إنشاء) أو PUT (تعديل)
+  const [profileExists, setProfileExists] = useState(false);
+
+  // آخر نتيجة رسمية من الباك اند (بعد أول تحميل أو بعد آخر حفظ ناجح)
+  const [savedTarget, setSavedTarget] = useState<NutritionTarget | null>(null);
+
   // UI State
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -47,26 +71,25 @@ export default function ProfilePage() {
   // Load existing profile from API
   useEffect(() => {
     getHealthProfile()
-      .then((profile: HealthProfile) => {
+      .then(({ profile, nutrition_target }) => {
+        setProfileExists(true);
+        setSavedTarget(nutrition_target);
+
         if (profile.gender) setGender(profile.gender);
         if (profile.age) setAge(String(profile.age));
         if (profile.activity_level) setActivityLevel(profile.activity_level);
         if (profile.goal) setGoal(profile.goal);
-
-        if (profile.height_cm) {
-          setHeightCm(String(profile.height_cm));
-        }
-        if (profile.weight_kg) {
-          setWeightKg(String(profile.weight_kg));
-        }
+        if (profile.height_cm) setHeightCm(String(profile.height_cm));
+        if (profile.weight_kg) setWeightKg(String(profile.weight_kg));
       })
       .catch(() => {
-        // Safe fallback for new profiles
+        // 404 طبيعي هون: مستخدم جديد لسا ما عمل بروفايل
+        setProfileExists(false);
       })
       .finally(() => setLoading(false));
   }, []);
 
-  // Live Calculated Targets
+  // معاينة فورية (تقديرية) أثناء الكتابة — تحدّث لحظيًا بدون نداء API بكل ضغطة
   const liveTargets = useMemo(() => {
     const ageNum = Number(age);
     const hCm =
@@ -88,18 +111,10 @@ export default function ProfilePage() {
       activityLevel,
       goal,
     });
-  }, [
-    age,
-    gender,
-    unitSystem,
-    heightCm,
-    heightFt,
-    heightIn,
-    weightKg,
-    weightLb,
-    activityLevel,
-    goal,
-  ]);
+  }, [age, gender, unitSystem, heightCm, heightFt, heightIn, weightKg, weightLb, activityLevel, goal]);
+
+  // بعد أول حفظ ناجح، نفضّل الرقم الرسمي المحفوظ على التقدير المحلي
+  const displayTargets = savedTarget ? targetsFromApi(savedTarget) : liveTargets;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,42 +123,46 @@ export default function ProfilePage() {
     setErrorMsg(null);
 
     const ageNum = Number(age);
-    if (!ageNum || ageNum < 10 || ageNum > 120) {
+    if (!ageNum || ageNum < 13 || ageNum > 100) {
       setErrorMsg(t.common.errorGeneric);
       setSubmitting(false);
       return;
     }
 
-    try {
-      if (unitSystem === "metric") {
-        await saveHealthProfile({
+    const payload =
+      unitSystem === "metric"
+        ? {
           age: ageNum,
           gender,
-          height_unit: "cm",
+          height_unit: "cm" as const,
           height_cm: Number(heightCm),
-          weight_unit: "kg",
+          weight_unit: "kg" as const,
           weight_kg: Number(weightKg),
           activity_level: activityLevel,
           goal,
-        });
-      } else {
-        await saveHealthProfile({
+        }
+        : {
           age: ageNum,
           gender,
-          height_unit: "ft_in",
+          height_unit: "ft_in" as const,
           height_ft: Number(heightFt),
           height_in: Number(heightIn),
-          weight_unit: "lb",
+          weight_unit: "lb" as const,
           weight_lb: Number(weightLb),
           activity_level: activityLevel,
           goal,
-        });
-      }
+        };
 
+    try {
+      // POST أول مرة (إنشاء) — PUT لو عنده بروفايل أصلاً (تعديل)
+      const { nutrition_target } = profileExists
+        ? await updateHealthProfile(payload)
+        : await saveHealthProfile(payload);
+
+      setSavedTarget(nutrition_target);
+      setProfileExists(true);
       useAuthStore.getState().setHasHealthProfile(true);
-      setSuccessMsg(
-        t.common.appName ? "Profile updated successfully! / تم تحديث الملف بنجاح" : "Success",
-      );
+      setSuccessMsg("Profile updated successfully! / تم تحديث الملف بنجاح");
       setTimeout(() => setSuccessMsg(null), 4000);
     } catch (err) {
       setErrorMsg(extractErrorMessage(err, t.common.errorGeneric));
@@ -244,22 +263,20 @@ export default function ProfilePage() {
                       <button
                         type="button"
                         onClick={() => setUnitSystem("metric")}
-                        className={`rounded-lg px-3 py-1 text-xs font-bold transition-all ${
-                          unitSystem === "metric"
+                        className={`rounded-lg px-3 py-1 text-xs font-bold transition-all ${unitSystem === "metric"
                             ? "bg-surface text-primary shadow-sm"
                             : "text-on-surface-variant hover:text-on-surface"
-                        }`}
+                          }`}
                       >
                         Metric (cm/kg)
                       </button>
                       <button
                         type="button"
                         onClick={() => setUnitSystem("imperial")}
-                        className={`rounded-lg px-3 py-1 text-xs font-bold transition-all ${
-                          unitSystem === "imperial"
+                        className={`rounded-lg px-3 py-1 text-xs font-bold transition-all ${unitSystem === "imperial"
                             ? "bg-surface text-primary shadow-sm"
                             : "text-on-surface-variant hover:text-on-surface"
-                        }`}
+                          }`}
                       >
                         Imperial (ft/lb)
                       </button>
@@ -270,6 +287,8 @@ export default function ProfilePage() {
                     <TextField
                       label={t.setup.step1.age}
                       type="number"
+                      min={13}
+                      max={100}
                       value={age}
                       onChange={(e) => setAge(e.target.value)}
                       required
@@ -283,11 +302,10 @@ export default function ProfilePage() {
                         <button
                           type="button"
                           onClick={() => setGender("male")}
-                          className={`flex items-center justify-center gap-1.5 rounded-xl border p-2.5 text-xs font-semibold transition-all ${
-                            gender === "male"
+                          className={`flex items-center justify-center gap-1.5 rounded-xl border p-2.5 text-xs font-semibold transition-all ${gender === "male"
                               ? "border-primary bg-primary-container text-on-primary-container shadow-sm"
                               : "border-outline-variant/60 bg-surface-container-lowest text-on-surface-variant hover:border-primary/40"
-                          }`}
+                            }`}
                         >
                           <span className="material-symbols-outlined text-base">male</span>
                           {t.setup.step1.genderMale}
@@ -295,11 +313,10 @@ export default function ProfilePage() {
                         <button
                           type="button"
                           onClick={() => setGender("female")}
-                          className={`flex items-center justify-center gap-1.5 rounded-xl border p-2.5 text-xs font-semibold transition-all ${
-                            gender === "female"
+                          className={`flex items-center justify-center gap-1.5 rounded-xl border p-2.5 text-xs font-semibold transition-all ${gender === "female"
                               ? "border-primary bg-primary-container text-on-primary-container shadow-sm"
                               : "border-outline-variant/60 bg-surface-container-lowest text-on-surface-variant hover:border-primary/40"
-                          }`}
+                            }`}
                         >
                           <span className="material-symbols-outlined text-base">female</span>
                           {t.setup.step1.genderFemale}
@@ -314,6 +331,8 @@ export default function ProfilePage() {
                       <TextField
                         label={`${t.setup.step2.height} (${t.setup.step2.cm})`}
                         type="number"
+                        min={50}
+                        max={250}
                         value={heightCm}
                         onChange={(e) => setHeightCm(e.target.value)}
                         required
@@ -323,6 +342,8 @@ export default function ProfilePage() {
                         <TextField
                           label={`${t.setup.step2.height} (ft)`}
                           type="number"
+                          min={1}
+                          max={8}
                           value={heightFt}
                           onChange={(e) => setHeightFt(e.target.value)}
                           required
@@ -330,6 +351,8 @@ export default function ProfilePage() {
                         <TextField
                           label="(in)"
                           type="number"
+                          min={0}
+                          max={11.99}
                           value={heightIn}
                           onChange={(e) => setHeightIn(e.target.value)}
                           required
@@ -342,6 +365,8 @@ export default function ProfilePage() {
                         label={`${t.setup.step2.weight} (${t.setup.step2.kg})`}
                         type="number"
                         step="0.1"
+                        min={20}
+                        max={500}
                         value={weightKg}
                         onChange={(e) => setWeightKg(e.target.value)}
                         required
@@ -351,6 +376,8 @@ export default function ProfilePage() {
                         label={`${t.setup.step2.weight} (lb)`}
                         type="number"
                         step="0.1"
+                        min={44}
+                        max={1100}
                         value={weightLb}
                         onChange={(e) => setWeightLb(e.target.value)}
                         required
@@ -478,7 +505,7 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* Right Column: Live Target Preview */}
+              {/* Right Column: Targets Preview */}
               <div className="flex flex-col gap-6">
                 <div className="sticky top-24 rounded-2xl border border-outline-variant/50 bg-surface p-6 elevation-card">
                   <div className="mb-4 flex items-center justify-between border-b border-outline-variant/40 pb-3">
@@ -487,15 +514,15 @@ export default function ProfilePage() {
                         monitoring
                       </span>
                       <h2 className="text-base font-bold text-on-surface">
-                        Live Targets Preview
+                        {savedTarget ? "Saved Targets" : "Live Targets Preview"}
                       </h2>
                     </div>
                     <span className="rounded-full bg-primary-container px-2.5 py-0.5 text-[10px] font-bold text-on-primary-container">
-                      Real-time
+                      {savedTarget ? "Confirmed" : "Estimate"}
                     </span>
                   </div>
 
-                  {liveTargets ? (
+                  {displayTargets ? (
                     <div className="flex flex-col gap-6">
                       {/* Calorie Ring Summary */}
                       <div className="rounded-xl bg-primary-container p-5 text-center text-on-primary-container">
@@ -506,19 +533,20 @@ export default function ProfilePage() {
                           {t.setup.results.calorieTarget}
                         </p>
                         <p className="mt-1 text-4xl font-bold tracking-tight text-[#006B5F]">
-                          {liveTargets.calories.toLocaleString()}
+                          {displayTargets.calories.toLocaleString()}
                           <span className="text-sm font-semibold opacity-70 ms-1">
                             {t.setup.results.kcal}
                           </span>
                         </p>
                         <p className="mt-1 text-[11px] opacity-60">
-                          Calculated via Mifflin-St Jeor formula
+                          {savedTarget
+                            ? "Confirmed by server (Mifflin-St Jeor)"
+                            : "Estimate — save to confirm exact value"}
                         </p>
                       </div>
 
                       {/* Macro Breakdown Rows */}
                       <div className="flex flex-col gap-3">
-                        {/* Protein */}
                         <div className="rounded-xl border border-outline-variant/40 bg-surface-container-lowest p-3.5">
                           <div className="flex items-center justify-between text-xs font-semibold">
                             <span className="flex items-center gap-1.5 text-on-surface">
@@ -528,18 +556,17 @@ export default function ProfilePage() {
                               {t.setup.results.protein}
                             </span>
                             <span className="text-on-surface font-bold">
-                              {liveTargets.protein_g}g ({liveTargets.protein_pct}%)
+                              {displayTargets.protein_g}g ({displayTargets.protein_pct}%)
                             </span>
                           </div>
                           <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-surface-container-high">
                             <div
                               className="h-full bg-[#006B5F] transition-all duration-300"
-                              style={{ width: `${liveTargets.protein_pct}%` }}
+                              style={{ width: `${displayTargets.protein_pct}%` }}
                             />
                           </div>
                         </div>
 
-                        {/* Carbs */}
                         <div className="rounded-xl border border-outline-variant/40 bg-surface-container-lowest p-3.5">
                           <div className="flex items-center justify-between text-xs font-semibold">
                             <span className="flex items-center gap-1.5 text-on-surface">
@@ -549,18 +576,17 @@ export default function ProfilePage() {
                               {t.setup.results.carbs}
                             </span>
                             <span className="text-on-surface font-bold">
-                              {liveTargets.carbs_g}g ({liveTargets.carbs_pct}%)
+                              {displayTargets.carbs_g}g ({displayTargets.carbs_pct}%)
                             </span>
                           </div>
                           <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-surface-container-high">
                             <div
                               className="h-full bg-tertiary transition-all duration-300"
-                              style={{ width: `${liveTargets.carbs_pct}%` }}
+                              style={{ width: `${displayTargets.carbs_pct}%` }}
                             />
                           </div>
                         </div>
 
-                        {/* Fats */}
                         <div className="rounded-xl border border-outline-variant/40 bg-surface-container-lowest p-3.5">
                           <div className="flex items-center justify-between text-xs font-semibold">
                             <span className="flex items-center gap-1.5 text-on-surface">
@@ -570,13 +596,13 @@ export default function ProfilePage() {
                               {t.setup.results.fats}
                             </span>
                             <span className="text-on-surface font-bold">
-                              {liveTargets.fats_g}g ({liveTargets.fats_pct}%)
+                              {displayTargets.fats_g}g ({displayTargets.fats_pct}%)
                             </span>
                           </div>
                           <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-surface-container-high">
                             <div
                               className="h-full bg-secondary transition-all duration-300"
-                              style={{ width: `${liveTargets.fats_pct}%` }}
+                              style={{ width: `${displayTargets.fats_pct}%` }}
                             />
                           </div>
                         </div>
@@ -584,7 +610,7 @@ export default function ProfilePage() {
 
                       {/* Active Goal Pill */}
                       <div className="rounded-xl bg-surface-container-low p-3.5 text-center text-xs text-on-surface-variant">
-                        Goal: <strong className="text-on-surface capitalize">{goal} weight</strong> — targets update dynamically as you tweak your biometrics.
+                        Goal: <strong className="text-on-surface capitalize">{goal} weight</strong> — {savedTarget ? "last confirmed target shown above." : "edit and save to confirm your exact target."}
                       </div>
                     </div>
                   ) : (
