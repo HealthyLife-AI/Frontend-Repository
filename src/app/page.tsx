@@ -288,7 +288,9 @@ export default function OnboardingPage() {
 
                 {/* Calorie Output */}
                 <div className="flex items-baseline gap-2 my-2">
-                  <span className="text-4xl sm:text-5xl font-black tracking-tight">{targetCalories.toLocaleString()}</span>
+                  <span className="text-4xl sm:text-5xl font-black tracking-tight" suppressHydrationWarning>
+                    {targetCalories.toLocaleString("en-US")}
+                  </span>
                   <span className="text-sm font-semibold text-white/90">{t.onboarding.calculatorPreview?.kcalUnit || "سعرة / يوم"}</span>
                 </div>
                 <p className="text-[11px] text-white/75 mb-6">
