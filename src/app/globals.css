@@ -244,3 +244,43 @@ html[dir="rtl"] body {
 .animate-fade-up-delay-1 { animation-delay: 0.08s; }
 .animate-fade-up-delay-2 { animation-delay: 0.16s; }
 .animate-fade-up-delay-3 { animation-delay: 0.24s; }
+
+/* ── Floating Animation for Hero Badges ──────────────────────────────── */
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes float-reverse {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(8px); }
+}
+
+.animate-float-slow {
+  animation: float-slow 4s ease-in-out infinite;
+}
+
+.animate-float-reverse {
+  animation: float-reverse 5s ease-in-out infinite;
+}
+
+/* ── Glassmorphism Card ──────────────────────────────────────────────── */
+.glass-card {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.glass-card-dark {
+  background: rgba(0, 107, 95, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* ── Gradient Glow ────────────────────────────────────────────────────── */
+.glow-primary {
+  box-shadow: 0 0 25px rgba(0, 107, 95, 0.25);
+}
+

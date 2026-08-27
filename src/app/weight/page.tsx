@@ -38,7 +38,7 @@ export default function WeightLogPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const weightKg = Number(weight);
-    if (!weightKg || weightKg <= 0 || weightKg > 500) {
+    if (!weightKg || weightKg < 20 || weightKg > 500) {
       setError(t.common.errorGeneric);
       return;
     }
@@ -91,6 +91,7 @@ export default function WeightLogPage() {
               label={t.weight.date}
               type="date"
               value={date}
+              max={todayIso()}
               onChange={(e) => setDate(e.target.value)}
               required
             />
