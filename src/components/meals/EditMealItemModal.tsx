@@ -18,7 +18,8 @@ export function EditMealItemModal({
   onSuccess,
 }: EditMealItemModalProps) {
   const { t, locale } = useTranslation();
-  const [amountGrams, setAmountGrams] = useState<number>(item?.amount_g || 100);
+  const initialGrams = Number(item?.quantity_grams || item?.amount_g || 100);
+  const [amountGrams, setAmountGrams] = useState<number>(initialGrams);
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +39,7 @@ export function EditMealItemModal({
     setError(null);
 
     try {
-      await updateMealItem(item.id, { amount_g: amountGrams });
+      await updateMealItem(item.id, { quantity_grams: amountGrams });
       onSuccess();
       onClose();
     } catch (err) {

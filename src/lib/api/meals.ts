@@ -9,23 +9,28 @@ export type LoggedMealItem = {
   food_id: number;
   food?: FoodItem;
   food_name?: string;
-  amount_g: number;
-  calories: number | string;
-  protein_g: number | string;
-  carbs_g: number | string;
-  fat_g: number | string;
+  quantity_grams: number | string;
+  amount_g?: number; // fallback alias
+  calories_calculated?: number | string;
+  protein_calculated?: number | string;
+  carbs_calculated?: number | string;
+  fat_calculated?: number | string;
+  calories?: number | string;
+  protein_g?: number | string;
+  carbs_g?: number | string;
+  fat_g?: number | string;
   [key: string]: unknown;
 };
 
 export type Meal = {
   id: number;
-  date: string;
+  meal_date: string;
   meal_type: MealType;
   items: LoggedMealItem[];
-  total_calories: number | string;
-  total_protein: number | string;
-  total_carbs: number | string;
-  total_fats: number | string;
+  total_calories?: number | string;
+  total_protein?: number | string;
+  total_carbs?: number | string;
+  total_fats?: number | string;
   [key: string]: unknown;
 };
 
@@ -40,13 +45,13 @@ export type DailyMealsSummary = {
 
 export type AddFoodToMealPayload = {
   meal_type: MealType;
-  date: string;
+  meal_date: string;
   food_id: number;
-  amount_g: number;
+  quantity_grams: number;
 };
 
 export type UpdateMealItemPayload = {
-  amount_g: number;
+  quantity_grams?: number;
   meal_type?: MealType;
 };
 
@@ -56,28 +61,36 @@ export async function getMealsForDate(date: string): Promise<DailyMealsSummary> 
   });
 
   let mealsList: Meal[] = [];
-  if (Array.isArray(data)) {
-    mealsList = data as Meal[];
-  } else if (data && typeof data === "object") {
+  if (data && typeof data === "object") {
     if (Array.isArray(data.meals)) {
       mealsList = data.meals as Meal[];
-    } else if (Array.isArray(data.data)) {
-      mealsList = data.data as Meal[];
     }
+  } else if (Array.isArray(data)) {
+    mealsList = data as Meal[];
   }
 
-  // Calculate totals
   let total_calories = 0;
   let total_protein = 0;
   let total_carbs = 0;
   let total_fats = 0;
 
-  mealsList.forEach((m) => {
-    total_calories += Number(m.total_calories || 0);
-    total_protein += Number(m.total_protein || 0);
-    total_carbs += Number(m.total_carbs || 0);
-    total_fats += Number(m.total_fats || 0);
-  });
+  if (data && data.daily_totals) {
+    total_calories = Number(data.daily_totals.calories || 0);
+    total_protein = Number(data.daily_totals.protein || 0);
+    total_carbs = Number(data.daily_totals.carbs || 0);
+    total_fats = Number(data.daily_totals.fat || data.daily_totals.fats || 0);
+  } else {
+    mealsList.forEach((m) => {
+      if (Array.isArray(m.items)) {
+        m.items.forEach((item) => {
+          total_calories += Number(item.calories_calculated || item.calories || 0);
+          total_protein += Number(item.protein_calculated || item.protein_g || 0);
+          total_carbs += Number(item.carbs_calculated || item.carbs_g || 0);
+          total_fats += Number(item.fat_calculated || item.fat_g || 0);
+        });
+      }
+    });
+  }
 
   return {
     date,
@@ -89,27 +102,17 @@ export async function getMealsForDate(date: string): Promise<DailyMealsSummary> 
   };
 }
 
-export async function addFoodToMeal(payload: AddFoodToMealPayload): Promise<LoggedMealItem> {
+export async function addFoodToMeal(payload: AddFoodToMealPayload): Promise<any> {
   const { data } = await apiClient.post<any>("/meals", payload);
-  if (data && typeof data === "object") {
-    if (data.item) return data.item as LoggedMealItem;
-    if (data.meal_item) return data.meal_item as LoggedMealItem;
-    if (data.data) return data.data as LoggedMealItem;
-  }
-  return data as LoggedMealItem;
+  return data;
 }
 
 export async function updateMealItem(
   id: number,
   payload: UpdateMealItemPayload,
-): Promise<LoggedMealItem> {
+): Promise<any> {
   const { data } = await apiClient.put<any>(`/meal-items/${id}`, payload);
-  if (data && typeof data === "object") {
-    if (data.item) return data.item as LoggedMealItem;
-    if (data.meal_item) return data.meal_item as LoggedMealItem;
-    if (data.data) return data.data as LoggedMealItem;
-  }
-  return data as LoggedMealItem;
+  return data;
 }
 
 export async function deleteMealItem(id: number): Promise<void> {

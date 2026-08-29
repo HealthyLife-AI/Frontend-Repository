@@ -45,9 +45,9 @@ export function AddFoodModal({
     try {
       await addFoodToMeal({
         meal_type: mealType,
-        date,
+        meal_date: date,
         food_id: food.id,
-        amount_g: amountGrams,
+        quantity_grams: amountGrams,
       });
       onSuccess();
       onClose();

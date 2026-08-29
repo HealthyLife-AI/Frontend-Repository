@@ -28,7 +28,12 @@ export function MealSlotCard({
   const title = t.meals?.types?.[mealType] || mealType;
   const icon = mealIcons[mealType] || "restaurant";
   const items = meal?.items || [];
-  const totalCalories = Math.round(Number(meal?.total_calories || 0));
+  const totalCalories = Math.round(
+    Number(
+      meal?.total_calories ||
+        items.reduce((sum, i) => sum + Number(i.calories_calculated || i.calories || 0), 0)
+    )
+  );
 
   return (
     <div className="rounded-2xl border border-outline-variant/40 bg-surface p-5 shadow-sm hover:shadow-md transition-shadow">
@@ -64,7 +69,11 @@ export function MealSlotCard({
                 ? item.food.name_ar || item.food.name_en
                 : item.food.name_en || item.food.name_ar
               : item.food_name || "Food Item";
-            const itemCals = Math.round(Number(item.calories || 0));
+            const itemCals = Math.round(Number(item.calories_calculated || item.calories || 0));
+            const grams = Number(item.quantity_grams || item.amount_g || 0);
+            const prot = Math.round(Number(item.protein_calculated || item.protein_g || 0));
+            const carb = Math.round(Number(item.carbs_calculated || item.carbs_g || 0));
+            const fat = Math.round(Number(item.fat_calculated || item.fat_g || 0));
 
             return (
               <div
@@ -81,7 +90,7 @@ export function MealSlotCard({
                       {foodName}
                     </p>
                     <p className="text-[10px] text-on-surface-variant font-medium">
-                      {item.amount_g}g • P: {Math.round(Number(item.protein_g || 0))}g • C: {Math.round(Number(item.carbs_g || 0))}g • F: {Math.round(Number(item.fat_g || 0))}g
+                      {grams}g • P: {prot}g • C: {carb}g • F: {fat}g
                     </p>
                   </div>
                 </div>
