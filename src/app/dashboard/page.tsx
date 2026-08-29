@@ -10,8 +10,23 @@ import { logout } from "@/lib/api/auth";
 import { useAuthStore } from "@/store/authStore";
 import { getHealthProfile, type NutritionTarget } from "@/lib/api/profile";
 import { listWeightLogs, type WeightLog } from "@/lib/api/weightLogs";
+import { type FoodItem } from "@/lib/api/foods";
+import {
+  getMealsForDate,
+  type DailyMealsSummary,
+  type MealType,
+  type LoggedMealItem,
+} from "@/lib/api/meals";
+import { FoodSearchModal } from "@/components/meals/FoodSearchModal";
+import { AddFoodModal } from "@/components/meals/AddFoodModal";
+import { EditMealItemModal } from "@/components/meals/EditMealItemModal";
+import { MealSlotCard } from "@/components/meals/MealSlotCard";
 
 const CIRCUMFERENCE = 251.2;
+
+function todayIso(): string {
+  return new Date().toISOString().split("T")[0];
+}
 
 export default function DashboardPage() {
   const { t } = useTranslation();
@@ -20,18 +35,37 @@ export default function DashboardPage() {
 
   const [target, setTarget] = useState<NutritionTarget | null>(null);
   const [weightLogs, setWeightLogs] = useState<WeightLog[]>([]);
+  const [dailyMeals, setDailyMeals] = useState<DailyMealsSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    Promise.allSettled([getHealthProfile(), listWeightLogs()]).then(([profileRes, logsRes]) => {
+  // Modals state
+  const [searchModalOpen, setSearchModalOpen] = useState(false);
+  const [activeMealType, setActiveMealType] = useState<MealType>("breakfast");
+  const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
+  const [editingItem, setEditingItem] = useState<LoggedMealItem | null>(null);
+
+  const fetchDashboardData = () => {
+    const today = todayIso();
+    Promise.allSettled([
+      getHealthProfile(),
+      listWeightLogs(),
+      getMealsForDate(today),
+    ]).then(([profileRes, logsRes, mealsRes]) => {
       if (profileRes.status === "fulfilled") {
         setTarget(profileRes.value.nutrition_target);
       }
       if (logsRes.status === "fulfilled" && Array.isArray(logsRes.value)) {
         setWeightLogs(logsRes.value);
       }
+      if (mealsRes.status === "fulfilled") {
+        setDailyMeals(mealsRes.value);
+      }
       setLoading(false);
     });
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
   }, []);
 
   const handleLogout = async () => {
@@ -43,19 +77,29 @@ export default function DashboardPage() {
     }
   };
 
-  // القيم المستهدفة (حقيقية من الباك اند). "المستهلك" لسا 0 لحد ما سبرنت 3 يضيف تسجيل الوجبات.
+  // Target values from backend API
   const dailyCalorieTarget = target ? Math.round(parseFloat(target.daily_calories)) : null;
   const proteinTarget = target ? Math.round(parseFloat(target.protein_g)) : null;
   const carbsTarget = target ? Math.round(parseFloat(target.carbs_g)) : null;
   const fatsTarget = target ? Math.round(parseFloat(target.fat_g)) : null;
-  const consumedCalories = 0; // TODO: سبرنت 3 — يُحسب من الوجبات المسجّلة باليوم
+
+  // Consumed values calculated live from API meals response
+  const consumedCalories = dailyMeals?.total_calories || 0;
+  const consumedProtein = dailyMeals?.total_protein || 0;
+  const consumedCarbs = dailyMeals?.total_carbs || 0;
+  const consumedFats = dailyMeals?.total_fats || 0;
+
   const ringOffset = dailyCalorieTarget
     ? CIRCUMFERENCE * (1 - Math.min(consumedCalories / dailyCalorieTarget, 1))
     : CIRCUMFERENCE;
 
+  const proteinPct = proteinTarget ? Math.min(Math.round((consumedProtein / proteinTarget) * 100), 100) : 0;
+  const carbsPct = carbsTarget ? Math.min(Math.round((consumedCarbs / carbsTarget) * 100), 100) : 0;
+  const fatsPct = fatsTarget ? Math.min(Math.round((consumedFats / fatsTarget) * 100), 100) : 0;
+
   const latestWeight = weightLogs.length > 0 ? weightLogs[weightLogs.length - 1] : null;
 
-  // نبني مخطط بسيط من آخر 6 تسجيلات وزن حقيقية (بدل النقاط الثابتة السابقة)
+  // Weight Trend Line
   const trend = useMemo(() => {
     const points = weightLogs.slice(-6);
     if (points.length < 2) return null;
@@ -77,14 +121,34 @@ export default function DashboardPage() {
     return { coords, polyline, area };
   }, [weightLogs]);
 
+  // Handle open food search for meal slot
+  const handleOpenSearch = (mealType: MealType) => {
+    setActiveMealType(mealType);
+    setSearchModalOpen(true);
+  };
+
+  const handleSelectFood = (food: FoodItem) => {
+    setSearchModalOpen(false);
+    setSelectedFood(food);
+  };
+
+  const mealSlots: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
+  const mealsByType = useMemo(() => {
+    const map: Record<string, any> = {};
+    dailyMeals?.meals.forEach((m) => {
+      map[m.meal_type] = m;
+    });
+    return map;
+  }, [dailyMeals]);
+
   return (
     <AuthGuard>
       <div className="flex h-screen w-full bg-background overflow-hidden">
         {/* ── Sidebar ──────────────────────────────────────────────────── */}
         <aside className="hidden md:flex w-64 flex-col border-e border-outline-variant/60 bg-surface shrink-0 elevation-card">
           <div className="flex items-center gap-3 px-6 py-5 border-b border-outline-variant/60">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#006B5F] shadow-[0_2px_8px_rgba(0,107,95,0.35)]">
-              <span className="material-symbols-outlined text-xl text-white">nutrition</span>
+            <div className="flex h-9 w-9 overflow-hidden items-center justify-center rounded-xl bg-white p-0.5 shadow-md ring-1 ring-[#006B5F]/20">
+              <img src="/images/logo.png" alt="HealthyLife AI Logo" className="h-full w-full object-contain" />
             </div>
             <span className="text-base font-bold text-on-surface">{t.common.appName}</span>
           </div>
@@ -128,8 +192,8 @@ export default function DashboardPage() {
         <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <header className="h-16 bg-surface/80 backdrop-blur-sm border-b border-outline-variant/60 flex items-center justify-between px-6 shrink-0">
             <div className="flex items-center gap-3">
-              <div className="flex md:hidden h-8 w-8 items-center justify-center rounded-lg bg-[#006B5F]">
-                <span className="material-symbols-outlined text-lg text-white">nutrition</span>
+              <div className="flex md:hidden h-8 w-8 overflow-hidden items-center justify-center rounded-lg bg-white p-0.5 shadow-sm ring-1 ring-[#006B5F]/20">
+                <img src="/images/logo.png" alt="HealthyLife AI Logo" className="h-full w-full object-contain" />
               </div>
               <div>
                 <h1 className="text-sm font-bold text-on-surface leading-tight">
@@ -165,8 +229,9 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-5 animate-fade-up">
-                {/* ── Left Column ─────────────────────────────────────── */}
+                {/* ── Left Column (Daily Calorie Ring & Meals Tracking) ──── */}
                 <div className="lg:w-2/3 flex flex-col gap-5">
+                  {/* Calorie Ring & Macro Card */}
                   <div className="bg-surface rounded-2xl p-6 border border-outline-variant/40 elevation-card transition-shadow duration-200 hover:elevation-card-hover">
                     <div className="flex justify-between items-center mb-6">
                       <div>
@@ -175,12 +240,13 @@ export default function DashboardPage() {
                           {new Date().toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}
                         </p>
                       </div>
-                      <Link href="/weight">
-                        <button className="flex items-center gap-1.5 rounded-xl bg-[#006B5F] px-4 py-2 text-xs font-semibold text-white shadow-[0_2px_8px_rgba(0,107,95,0.30)] hover:bg-[#00574d] hover:shadow-[0_4px_12px_rgba(0,107,95,0.40)] transition-all duration-200">
-                          <span className="material-symbols-outlined text-sm">add</span>
-                          {t.weight.logWeight}
-                        </button>
-                      </Link>
+                      <button
+                        onClick={() => handleOpenSearch("breakfast")}
+                        className="flex items-center gap-1.5 rounded-xl bg-[#006B5F] px-4 py-2 text-xs font-semibold text-white shadow-[0_2px_8px_rgba(0,107,95,0.30)] hover:bg-[#00574d] hover:shadow-[0_4px_12px_rgba(0,107,95,0.40)] transition-all duration-200"
+                      >
+                        <span className="material-symbols-outlined text-sm">add</span>
+                        {t.meals?.addFood}
+                      </button>
                     </div>
 
                     {!target ? (
@@ -216,51 +282,73 @@ export default function DashboardPage() {
                             </defs>
                           </svg>
                           <div className="absolute inset-0 flex flex-col items-center justify-center">
-                            <span className="text-3xl font-bold text-[#006B5F]">{consumedCalories.toLocaleString()}</span>
-                            <span className="text-xs text-on-surface-variant mt-0.5">
-                              / {dailyCalorieTarget?.toLocaleString()} {t.setup.results.kcal}
+                            <span className="text-3xl font-bold text-[#006B5F]" suppressHydrationWarning>
+                              {consumedCalories.toLocaleString("en-US")}
+                            </span>
+                            <span className="text-xs text-on-surface-variant mt-0.5" suppressHydrationWarning>
+                              / {dailyCalorieTarget?.toLocaleString("en-US")} {t.setup.results.kcal}
                             </span>
                           </div>
                         </div>
 
-                        {/* Macros — الهدف حقيقي، المستهلك 0 مؤقتًا (بانتظار سبرنت 3) */}
+                        {/* Macros Live Progress Bars */}
                         <div className="flex flex-col gap-5 w-full md:w-64">
                           <div className="animate-fade-up animate-fade-up-delay-1">
                             <div className="flex justify-between text-xs font-semibold mb-2">
                               <span className="text-on-surface">{t.setup.results.protein}</span>
-                              <span className="text-on-surface-variant tabular-nums">0g / {proteinTarget}g</span>
+                              <span className="text-on-surface-variant tabular-nums">{consumedProtein}g / {proteinTarget}g</span>
                             </div>
                             <div className="h-2.5 w-full bg-surface-container-high rounded-full overflow-hidden">
-                              <div className="h-full bg-[#006B5F] rounded-full progress-fill" style={{ width: "0%" }} />
+                              <div className="h-full bg-[#006B5F] rounded-full progress-fill" style={{ width: `${proteinPct}%` }} />
                             </div>
                           </div>
 
                           <div className="animate-fade-up animate-fade-up-delay-2">
                             <div className="flex justify-between text-xs font-semibold mb-2">
                               <span className="text-on-surface">{t.setup.results.carbs}</span>
-                              <span className="text-on-surface-variant tabular-nums">0g / {carbsTarget}g</span>
+                              <span className="text-on-surface-variant tabular-nums">{consumedCarbs}g / {carbsTarget}g</span>
                             </div>
                             <div className="h-2.5 w-full bg-surface-container-high rounded-full overflow-hidden">
-                              <div className="h-full bg-tertiary rounded-full progress-fill" style={{ width: "0%" }} />
+                              <div className="h-full bg-tertiary rounded-full progress-fill" style={{ width: `${carbsPct}%` }} />
                             </div>
                           </div>
 
                           <div className="animate-fade-up animate-fade-up-delay-3">
                             <div className="flex justify-between text-xs font-semibold mb-2">
                               <span className="text-on-surface">{t.setup.results.fats}</span>
-                              <span className="text-on-surface-variant tabular-nums">0g / {fatsTarget}g</span>
+                              <span className="text-on-surface-variant tabular-nums">{consumedFats}g / {fatsTarget}g</span>
                             </div>
                             <div className="h-2.5 w-full bg-surface-container-high rounded-full overflow-hidden">
-                              <div className="h-full bg-secondary rounded-full progress-fill" style={{ width: "0%" }} />
+                              <div className="h-full bg-secondary rounded-full progress-fill" style={{ width: `${fatsPct}%` }} />
                             </div>
                           </div>
                         </div>
                       </div>
                     )}
                   </div>
+
+                  {/* ── Sprint 3 Meal Slots Grid ───────────────────────────── */}
+                  <div className="flex flex-col gap-4">
+                    <h2 className="text-base font-bold text-on-surface flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[#006B5F]">restaurant_menu</span>
+                      <span>{t.meals?.title}</span>
+                    </h2>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {mealSlots.map((type) => (
+                        <MealSlotCard
+                          key={type}
+                          mealType={type}
+                          meal={mealsByType[type]}
+                          onOpenSearch={handleOpenSearch}
+                          onEditItem={(item) => setEditingItem(item)}
+                        />
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
-                {/* ── Right Column ─────────────────────────────────────── */}
+                {/* ── Right Column (Weight Log & Progress) ───────────────── */}
                 <div className="lg:w-1/3 flex flex-col gap-5">
                   <div className="bg-surface rounded-2xl p-6 border border-outline-variant/40 elevation-card transition-shadow duration-200 hover:elevation-card-hover flex flex-col">
                     <div className="flex justify-between items-start mb-5">
@@ -316,6 +404,28 @@ export default function DashboardPage() {
           </div>
         </main>
       </div>
+
+      {/* ── Sprint 3 Modals ───────────────────────────────────────────── */}
+      <FoodSearchModal
+        isOpen={searchModalOpen}
+        onClose={() => setSearchModalOpen(false)}
+        mealType={activeMealType}
+        onSelectFood={handleSelectFood}
+      />
+
+      <AddFoodModal
+        food={selectedFood}
+        mealType={activeMealType}
+        date={todayIso()}
+        onClose={() => setSelectedFood(null)}
+        onSuccess={fetchDashboardData}
+      />
+
+      <EditMealItemModal
+        item={editingItem}
+        onClose={() => setEditingItem(null)}
+        onSuccess={fetchDashboardData}
+      />
     </AuthGuard>
   );
 }

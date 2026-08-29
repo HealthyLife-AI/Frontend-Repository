@@ -213,6 +213,31 @@ const en = {
     comingSoon: "Your nutrition dashboard is on the way (Sprint 4).",
     logout: "Log out",
   },
+  meals: {
+    title: "Meals & Nutrition Log",
+    subtitle: "Track your daily meals, calories, and macros.",
+    addFood: "Add Food",
+    searchPlaceholder: "Search food by name (e.g. Chicken, Rice, Apple)...",
+    noResults: "No foods found matching your search.",
+    amountGrams: "Amount (grams)",
+    servingSize: "Per 100g",
+    addSuccess: "Food added to meal successfully",
+    deleteSuccess: "Item removed from meal",
+    editItem: "Edit Portion",
+    deleteItem: "Delete Item",
+    confirmDelete: "Are you sure you want to remove this item?",
+    types: {
+      breakfast: "Breakfast",
+      lunch: "Lunch",
+      dinner: "Dinner",
+      snack: "Snack",
+    },
+    emptySlot: "No foods logged for this meal yet.",
+    dailySummary: "Daily Summary",
+    consumed: "Consumed",
+    remaining: "Remaining",
+    overTarget: "Over Target",
+  },
 };
 
 export default en;

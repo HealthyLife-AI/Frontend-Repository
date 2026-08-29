@@ -208,6 +208,31 @@ const ar: Dictionary = {
     comingSoon: "لوحة التغذية الخاصة بك قادمة قريباً (السبرنت 4).",
     logout: "تسجيل الخروج",
   },
+  meals: {
+    title: "سجل الوجبات والتغذية",
+    subtitle: "تتبع وجباتك اليومية، السعرات الحرارية، والمغذيات الكبرى.",
+    addFood: "إضافة طعام",
+    searchPlaceholder: "ابحث عن طعام بالاسم (مثل: دجاج، أرز، تفاح)...",
+    noResults: "لم يتم العثور على أطعمة تطابق بحثك.",
+    amountGrams: "الكمية (بالجرام)",
+    servingSize: "لكل 100 جرام",
+    addSuccess: "تمت إضافة الطعام للوجبة بنجاح",
+    deleteSuccess: "تم حذف الطعام من الوجبة",
+    editItem: "تعديل الكمية",
+    deleteItem: "حذف الطعام",
+    confirmDelete: "هل أنت أصلًا متأكد من رغبتك في حذف هذا الطعام؟",
+    types: {
+      breakfast: "وجبة الفطور",
+      lunch: "وجبة الغداء",
+      dinner: "وجبة العشاء",
+      snack: "وجبة خفيفة",
+    },
+    emptySlot: "لا توجد أطعمة مسجلة في هذه الوجبة بعد.",
+    dailySummary: "الملخص اليومي",
+    consumed: "المستهلك",
+    remaining: "المتبقي",
+    overTarget: "فائض عن الهدف",
+  },
 };
 
 export default ar;
