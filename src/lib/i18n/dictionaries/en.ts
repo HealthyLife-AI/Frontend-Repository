@@ -207,6 +207,7 @@ const en = {
     submit: "Save entry",
     empty: "No weight entries yet. Log your first one to see your trend.",
     history: "History",
+    latest: "Latest weight",
   },
   dashboard: {
     title: "Dashboard",

@@ -202,6 +202,7 @@ const ar: Dictionary = {
     submit: "حفظ الإدخال",
     empty: "لا توجد إدخالات وزن بعد. سجّل أول إدخال لمشاهدة تقدمك.",
     history: "السجل",
+    latest: "آخر وزن",
   },
   dashboard: {
     title: "لوحة التحكم",

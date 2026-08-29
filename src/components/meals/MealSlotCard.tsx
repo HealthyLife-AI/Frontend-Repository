@@ -10,11 +10,27 @@ type MealSlotCardProps = {
   onEditItem: (item: LoggedMealItem) => void;
 };
 
-const mealIcons: Record<MealType, string> = {
-  breakfast: "free_breakfast",
-  lunch: "lunch_dining",
-  dinner: "dinner_dining",
-  snack: "cookie",
+const mealConfig: Record<MealType, { icon: string; gradient: string; light: string }> = {
+  breakfast: {
+    icon: "free_breakfast",
+    gradient: "from-amber-500 to-orange-400",
+    light: "bg-amber-50 text-amber-600",
+  },
+  lunch: {
+    icon: "lunch_dining",
+    gradient: "from-emerald-600 to-teal-500",
+    light: "bg-emerald-50 text-emerald-700",
+  },
+  dinner: {
+    icon: "dinner_dining",
+    gradient: "from-indigo-500 to-violet-500",
+    light: "bg-indigo-50 text-indigo-600",
+  },
+  snack: {
+    icon: "cookie",
+    gradient: "from-rose-400 to-pink-400",
+    light: "bg-rose-50 text-rose-500",
+  },
 };
 
 export function MealSlotCard({
@@ -26,7 +42,7 @@ export function MealSlotCard({
   const { t, locale } = useTranslation();
 
   const title = t.meals?.types?.[mealType] || mealType;
-  const icon = mealIcons[mealType] || "restaurant";
+  const config = mealConfig[mealType] || { icon: "restaurant", gradient: "from-[#006B5F] to-teal-500", light: "bg-teal-50 text-teal-600" };
   const items = meal?.items || [];
   const totalCalories = Math.round(
     Number(
@@ -36,32 +52,39 @@ export function MealSlotCard({
   );
 
   return (
-    <div className="rounded-2xl border border-outline-variant/40 bg-surface p-5 shadow-sm hover:shadow-md transition-shadow">
-      {/* Header Slot */}
-      <div className="flex items-center justify-between pb-3 border-b border-outline-variant/30">
+    <div className="rounded-2xl border border-outline-variant/30 bg-surface overflow-hidden elevation-card transition-all duration-300 hover:shadow-[0_8px_30px_rgba(0,107,95,0.12)]">
+      {/* Gradient accent top bar */}
+      <div className={`h-0.5 w-full bg-gradient-to-r ${config.gradient}`} />
+
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 py-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#006B5F]/10 text-[#006B5F]">
-            <span className="material-symbols-outlined text-xl">{icon}</span>
+          <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${config.light}`}>
+            <span className="material-symbols-outlined text-xl">{config.icon}</span>
           </div>
           <div>
             <h3 className="text-sm font-bold text-on-surface">{title}</h3>
-            <p className="text-xs text-on-surface-variant font-medium">
-              {totalCalories > 0 ? `${totalCalories} ${t.setup?.results?.kcal}` : t.meals?.emptySlot}
+            <p className="text-xs font-medium text-on-surface-variant">
+              {totalCalories > 0 ? (
+                <span className="text-[#006B5F] font-bold">{totalCalories} {t.setup?.results?.kcal}</span>
+              ) : (
+                <span className="opacity-50">{t.meals?.emptySlot}</span>
+              )}
             </p>
           </div>
         </div>
 
         <button
           onClick={() => onOpenSearch(mealType)}
-          className="flex items-center gap-1 text-xs font-bold text-[#006B5F] bg-[#006B5F]/10 hover:bg-[#006B5F] hover:text-white px-3 py-1.5 rounded-xl transition-all"
+          className="group flex items-center gap-1.5 rounded-xl border border-[#006B5F]/20 bg-[#006B5F]/5 px-3 py-2 text-xs font-bold text-[#006B5F] transition-all duration-200 hover:bg-[#006B5F] hover:text-white hover:border-transparent hover:shadow-[0_4px_12px_rgba(0,107,95,0.3)] active:scale-[0.97]"
         >
-          <span className="material-symbols-outlined text-base">add</span>
+          <span className="material-symbols-outlined text-base transition-transform group-hover:rotate-90">add</span>
           <span>{t.meals?.addFood}</span>
         </button>
       </div>
 
       {/* Items List */}
-      <div className="mt-3 space-y-2">
+      <div className="px-4 pb-4 space-y-2">
         {items.length > 0 ? (
           items.map((item) => {
             const foodName = item.food
@@ -79,31 +102,39 @@ export function MealSlotCard({
               <div
                 key={item.id}
                 onClick={() => onEditItem(item)}
-                className="flex items-center justify-between p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/20 hover:border-[#006B5F]/40 cursor-pointer transition-colors group"
+                className="group flex items-center justify-between gap-3 rounded-xl border border-outline-variant/20 bg-surface-container-lowest px-4 py-3 cursor-pointer transition-all duration-200 hover:border-[#006B5F]/40 hover:bg-[#006B5F]/5"
               >
-                <div className="flex items-center gap-2.5">
-                  <span className="material-symbols-outlined text-base text-on-surface-variant/60 group-hover:text-[#006B5F]">
-                    edit_note
-                  </span>
-                  <div>
-                    <p className="text-xs font-bold text-on-surface group-hover:text-[#006B5F] transition-colors">
-                      {foodName}
-                    </p>
-                    <p className="text-[10px] text-on-surface-variant font-medium">
-                      {grams}g • P: {prot}g • C: {carb}g • F: {fat}g
-                    </p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold text-on-surface group-hover:text-[#006B5F] transition-colors truncate">
+                    {foodName}
+                  </p>
+                  <div className="mt-0.5 flex items-center gap-2 text-[10px] text-on-surface-variant/70 font-medium">
+                    <span className="font-bold">{grams}g</span>
+                    <span className="opacity-40">·</span>
+                    <span>P:{prot}g</span>
+                    <span className="opacity-40">·</span>
+                    <span>C:{carb}g</span>
+                    <span className="opacity-40">·</span>
+                    <span>F:{fat}g</span>
                   </div>
                 </div>
 
-                <span className="text-xs font-extrabold text-[#006B5F] tabular-nums">
-                  {itemCals} <span className="text-[10px] font-normal text-on-surface-variant">kcal</span>
-                </span>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="text-sm font-extrabold text-[#006B5F] tabular-nums">
+                    {itemCals}
+                    <span className="text-[9px] font-normal text-on-surface-variant ms-0.5">kcal</span>
+                  </span>
+                  <span className="material-symbols-outlined text-sm text-on-surface-variant/30 group-hover:text-[#006B5F]/60 transition-colors">
+                    edit
+                  </span>
+                </div>
               </div>
             );
           })
         ) : (
-          <div className="py-4 text-center text-xs text-on-surface-variant/50 border border-dashed border-outline-variant/30 rounded-xl">
-            {t.meals?.emptySlot}
+          <div className="flex flex-col items-center justify-center gap-2 py-6 border border-dashed border-outline-variant/30 rounded-xl text-on-surface-variant/40">
+            <span className="material-symbols-outlined text-2xl">{config.icon}</span>
+            <p className="text-xs">{t.meals?.emptySlot}</p>
           </div>
         )}
       </div>
