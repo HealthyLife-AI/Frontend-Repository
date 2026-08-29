@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "@/lib/i18n/LocaleProvider";
 import { Button } from "@/components/ui/Button";
 import { updateMealItem, deleteMealItem, type LoggedMealItem } from "@/lib/api/meals";
@@ -18,11 +18,19 @@ export function EditMealItemModal({
   onSuccess,
 }: EditMealItemModalProps) {
   const { t, locale } = useTranslation();
-  const initialGrams = Number(item?.quantity_grams || item?.amount_g || 100);
-  const [amountGrams, setAmountGrams] = useState<number>(initialGrams);
+  const [amountGrams, setAmountGrams] = useState<number>(100);
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (item) {
+      setAmountGrams(Number(item.quantity_grams || item.amount_g || 100));
+      setSubmitting(false);
+      setDeleting(false);
+      setError(null);
+    }
+  }, [item]);
 
   if (!item) return null;
 
@@ -44,6 +52,7 @@ export function EditMealItemModal({
       onClose();
     } catch (err) {
       setError(extractErrorMessage(err, t.common?.errorGeneric));
+    } finally {
       setSubmitting(false);
     }
   };
@@ -58,6 +67,7 @@ export function EditMealItemModal({
       onClose();
     } catch (err) {
       setError(extractErrorMessage(err, t.common?.errorGeneric));
+    } finally {
       setDeleting(false);
     }
   };

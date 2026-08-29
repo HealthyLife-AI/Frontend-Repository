@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "@/lib/i18n/LocaleProvider";
 import { Button } from "@/components/ui/Button";
 import type { FoodItem } from "@/lib/api/foods";
@@ -26,6 +26,14 @@ export function AddFoodModal({
   const [amountGrams, setAmountGrams] = useState<number>(100);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (food) {
+      setAmountGrams(100);
+      setSubmitting(false);
+      setError(null);
+    }
+  }, [food]);
 
   if (!food) return null;
 
@@ -53,6 +61,7 @@ export function AddFoodModal({
       onClose();
     } catch (err) {
       setError(extractErrorMessage(err, t.common?.errorGeneric));
+    } finally {
       setSubmitting(false);
     }
   };
