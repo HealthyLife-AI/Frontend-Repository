@@ -60,48 +60,85 @@ export default function RegisterPage() {
         {/* Brand Illustration Panel */}
         <div className="relative hidden lg:flex bg-brand-panel items-center justify-center p-8 overflow-hidden">
           {/* Decorative blobs */}
-          <div className="pointer-events-none absolute -top-24 -start-24 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-20 -end-20 h-60 w-60 rounded-full bg-[#006B5F]/15 blur-2xl" />
+          <div className="pointer-events-none absolute -top-24 -start-24 h-72 w-72 rounded-full bg-white/20 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 -end-20 h-60 w-60 rounded-full bg-[#006B5F]/20 blur-2xl" />
 
-          <div className="absolute top-8 start-8 z-10 flex items-center gap-2">
-            <span className="material-symbols-outlined text-2xl text-[#006B5F]">nutrition</span>
-            <span className="text-xl font-bold text-[#006B5F]">{t.common.appName}</span>
-          </div>
+          {/* Top Brand Logo */}
+          <Link href="/" className="absolute top-8 start-8 z-10 flex items-center gap-2.5 group">
+            <div className="flex h-10 w-10 overflow-hidden items-center justify-center rounded-xl bg-white p-0.5 shadow-md ring-1 ring-[#006B5F]/20 transition-transform duration-200 group-hover:scale-105">
+              <img src="/images/logo.png" alt="HealthyLife AI Logo" className="h-full w-full object-contain" />
+            </div>
+            <span className="text-xl font-bold tracking-tight text-[#006B5F]">{t.common.appName}</span>
+          </Link>
 
-          <div className="relative h-full w-full max-w-lg flex items-center justify-center p-4 drop-shadow-lg">
+          {/* Central Illustration with Ambient Glow & Floating AI Chips */}
+          <div className="relative h-full w-full max-w-md flex items-center justify-center p-4 drop-shadow-2xl transition-transform duration-500 hover:scale-[1.02]">
             <img
               src="/images/brand-illustration.png"
               alt="HealthyLife AI Illustration"
-              className="max-h-full max-w-full object-contain object-center"
+              className="max-h-[80%] max-w-full object-contain object-center"
             />
+
+            {/* Floating Badge 1 (Top End) */}
+            <div className="absolute top-10 end-4 z-20 glass-card px-3.5 py-2.5 rounded-2xl shadow-lg flex items-center gap-2.5 animate-float-slow border border-white/80">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#006B5F]/15 text-[#006B5F]">
+                <span className="material-symbols-outlined text-lg">workspace_premium</span>
+              </div>
+              <div>
+                <p className="text-[11px] font-bold text-on-surface">خطط تغذية مخصصة</p>
+                <p className="text-[9px] text-on-surface-variant font-medium">مصممة بالذكاء الاصطناعي</p>
+              </div>
+            </div>
+
+            {/* Floating Badge 2 (Bottom Start) */}
+            <div className="absolute bottom-10 start-4 z-20 glass-card px-3.5 py-2.5 rounded-2xl shadow-lg flex items-center gap-2.5 animate-float-reverse border border-white/80">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/15 text-amber-600">
+                <span className="material-symbols-outlined text-lg">monitoring</span>
+              </div>
+              <div>
+                <p className="text-[11px] font-bold text-on-surface">متابعة فورية للماكروز</p>
+                <p className="text-[9px] text-on-surface-variant font-medium">طاقة وتوازن مستدام</p>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Register Form Panel */}
         <div className="relative flex flex-col justify-between bg-surface p-6 sm:p-12 overflow-y-auto">
-          {/* Header Bar */}
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2 text-lg font-bold text-[#006B5F] lg:hidden">
-              <span className="material-symbols-outlined">nutrition</span>
-              {t.common.appName}
-            </div>
-            <div className="ms-auto">
+          {/* Header Navigation Bar with Home Button */}
+          <div className="flex items-center justify-between w-full pb-4">
+            {/* Mobile Logo */}
+            <Link href="/" className="flex items-center gap-2 text-lg font-bold text-[#006B5F] lg:hidden">
+              <div className="h-8 w-8 rounded-lg bg-white p-0.5 shadow-sm ring-1 ring-[#006B5F]/20 overflow-hidden flex items-center justify-center">
+                <img src="/images/logo.png" alt="HealthyLife AI Logo" className="h-full w-full object-contain" />
+              </div>
+              <span>{t.common.appName}</span>
+            </Link>
+
+            {/* Return to Home Button & Language Controls */}
+            <div className="ms-auto flex items-center gap-3">
+              <Link href="/">
+                <Button variant="ghost" className="text-xs sm:text-sm font-semibold text-on-surface-variant hover:text-[#006B5F] flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-outline-variant/30 hover:border-[#006B5F]/40 transition-all">
+                  <span className="material-symbols-outlined text-base rtl:rotate-180">arrow_back</span>
+                  <span>{t.common.backToHome || "العودة للرئيسية"}</span>
+                </Button>
+              </Link>
               <LanguageToggle />
             </div>
           </div>
 
-          {/* Form Container */}
-          <div className="mx-auto my-auto flex w-full max-w-[400px] flex-col gap-6 py-6 animate-fade-up">
+          {/* Main Form Container */}
+          <div className="mx-auto my-auto flex w-full max-w-[420px] flex-col gap-5 py-4 animate-fade-up">
             <div>
-              <h1 className="text-2xl font-bold text-on-surface md:text-3xl">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-on-surface tracking-tight">
                 {t.auth.register.title}
               </h1>
-              <p className="mt-2 text-sm text-on-surface-variant md:text-base">
+              <p className="mt-2 text-sm text-on-surface-variant leading-relaxed">
                 {t.auth.register.subtitle}
               </p>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
+            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3.5" noValidate>
               <TextField
                 label={t.auth.register.fullName}
                 type="text"
@@ -127,7 +164,7 @@ export default function RegisterPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
-                    className="material-symbols-outlined text-outline hover:text-on-surface transition-colors"
+                    className="material-symbols-outlined text-outline hover:text-on-surface transition-colors p-1"
                     aria-label="toggle password visibility"
                   >
                     {showPassword ? "visibility" : "visibility_off"}
@@ -147,8 +184,9 @@ export default function RegisterPage() {
               />
 
               {serverError && (
-                <p className="rounded-xl bg-error-container px-4 py-3 text-sm text-on-error-container border border-error/20">
-                  {serverError}
+                <p className="rounded-xl bg-error-container px-4 py-3 text-sm text-on-error-container border border-error/20 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-base">error</span>
+                  <span>{serverError}</span>
                 </p>
               )}
 
@@ -156,25 +194,27 @@ export default function RegisterPage() {
                 type="submit"
                 fullWidth
                 loading={isSubmitting}
-                className="mt-2 bg-[#006B5F] hover:bg-[#00574d] active:bg-[#004038] text-white py-3.5 rounded-xl shadow-[0_4px_14px_rgba(0,107,95,0.30)] hover:shadow-[0_6px_20px_rgba(0,107,95,0.40)] transition-all duration-200"
+                className="mt-2 bg-[#006B5F] hover:bg-[#00574d] active:bg-[#004038] text-white font-bold py-3.5 rounded-xl shadow-lg shadow-[#006B5F]/25 hover:shadow-xl hover:shadow-[#006B5F]/35 transition-all duration-200"
               >
                 {t.auth.register.submit}
               </Button>
             </form>
 
-            <p className="text-center text-sm text-on-surface-variant">
-              {t.auth.register.haveAccount}{" "}
-              <Link href="/login" className="font-semibold text-[#006B5F] hover:underline underline-offset-2">
+            <div className="pt-2 text-center text-sm text-on-surface-variant border-t border-outline-variant/30">
+              <span>{t.auth.register.haveAccount} </span>
+              <Link href="/login" className="font-bold text-[#006B5F] hover:underline underline-offset-4 ms-1">
                 {t.auth.register.logIn}
               </Link>
-            </p>
+            </div>
           </div>
 
-          <div className="text-xs text-on-surface-variant/50 text-center lg:text-start">
-            &copy; {new Date().getFullYear()} {t.common.appName}
+          {/* Footer */}
+          <div className="text-xs text-on-surface-variant/60 text-center lg:text-start pt-4">
+            &copy; {new Date().getFullYear()} {t.common.appName}. All rights reserved.
           </div>
         </div>
       </div>
     </main>
   );
 }
+

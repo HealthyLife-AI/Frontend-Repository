@@ -2,6 +2,7 @@ const en = {
   common: {
     appName: "HealthyLife AI",
     back: "Back",
+    backToHome: "Back to Home",
     next: "Next",
     nextStep: "Next Step",
     loading: "Loading…",

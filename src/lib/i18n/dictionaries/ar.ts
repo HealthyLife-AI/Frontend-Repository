@@ -4,6 +4,7 @@ const ar: Dictionary = {
   common: {
     appName: "هيلثي لايف AI",
     back: "رجوع",
+    backToHome: "العودة للرئيسية",
     next: "التالي",
     nextStep: "الخطوة التالية",
     loading: "جارٍ التحميل…",
