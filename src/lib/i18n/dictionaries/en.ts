@@ -10,6 +10,7 @@ const en = {
     cancel: "Cancel",
     edit: "Edit",
     delete: "Delete",
+    today: "Today",
     errorGeneric: "Something went wrong. Please try again.",
   },
   onboarding: {

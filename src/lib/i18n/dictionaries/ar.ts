@@ -12,6 +12,7 @@ const ar: Dictionary = {
     cancel: "إلغاء",
     edit: "تعديل",
     delete: "حذف",
+    today: "اليوم",
     errorGeneric: "حدث خطأ ما. حاول مرة أخرى.",
   },
   onboarding: {
