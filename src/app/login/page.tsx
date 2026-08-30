@@ -27,6 +27,10 @@ export default function LoginPage() {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [resetModalOpen, setResetModalOpen] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetSubmitting, setResetSubmitting] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
 
   const {
     register,
@@ -168,6 +172,19 @@ export default function LoginPage() {
                 {...register("password")}
               />
 
+              <div className="flex justify-end -mt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setResetModalOpen(true);
+                    setResetSuccess(false);
+                  }}
+                  className="text-xs font-semibold text-[#006B5F] hover:underline transition-colors"
+                >
+                  {t.auth.login.forgotPassword || "نسيت كلمة المرور؟"}
+                </button>
+              </div>
+
               {serverError && (
                 <p className="rounded-xl bg-error-container px-4 py-3 text-sm text-on-error-container border border-error/20 flex items-center gap-2">
                   <span className="material-symbols-outlined text-base">error</span>
@@ -199,6 +216,78 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+
+      {/* Forgot Password Modal */}
+      {resetModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-up">
+          <div className="relative w-full max-w-md rounded-3xl bg-surface p-6 shadow-2xl border border-outline-variant/30 flex flex-col">
+            <div className="flex items-center justify-between pb-3 border-b border-outline-variant/30">
+              <h3 className="text-base font-bold text-on-surface flex items-center gap-2">
+                <span className="material-symbols-outlined text-[#006B5F]">lock_reset</span>
+                <span>{t.auth.login.resetPasswordTitle || "إعادة تعيين كلمة المرور"}</span>
+              </h3>
+              <button
+                onClick={() => setResetModalOpen(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-xl text-on-surface-variant hover:bg-surface-container transition-colors"
+              >
+                <span className="material-symbols-outlined text-lg">close</span>
+              </button>
+            </div>
+
+            <div className="py-5 flex flex-col gap-4">
+              <p className="text-xs text-on-surface-variant leading-relaxed">
+                {t.auth.login.resetPasswordDesc || "أدخل بريدك الإلكتروني وسيتم إرسال تعليمات إعادة التعيين."}
+              </p>
+
+              {resetSuccess ? (
+                <div className="rounded-2xl bg-[#006B5F]/10 border border-[#006B5F]/30 p-4 text-center space-y-2">
+                  <span className="material-symbols-outlined text-4xl text-[#006B5F]">mark_email_read</span>
+                  <p className="text-xs font-bold text-on-surface">
+                    {t.auth.login.resetSentSuccess || "تم إرسال تعليمات إعادة التعيين إلى بريدك الإلكتروني بنجاح."}
+                  </p>
+                  <Button variant="secondary" onClick={() => setResetModalOpen(false)} className="mt-2 text-xs rounded-xl w-full">
+                    {t.common.back || "إغلاق"}
+                  </Button>
+                </div>
+              ) : (
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    if (!resetEmail) return;
+                    setResetSubmitting(true);
+                    await new Promise((r) => setTimeout(r, 600));
+                    setResetSubmitting(false);
+                    setResetSuccess(true);
+                  }}
+                  className="flex flex-col gap-4"
+                >
+                  <TextField
+                    label={t.auth.login.email}
+                    type="email"
+                    placeholder="name@example.com"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    required
+                  />
+
+                  <div className="flex items-center gap-3 pt-2">
+                    <Button variant="secondary" type="button" onClick={() => setResetModalOpen(false)} className="flex-1 rounded-xl">
+                      {t.common.cancel}
+                    </Button>
+                    <Button
+                      type="submit"
+                      loading={resetSubmitting}
+                      className="flex-1 bg-[#006B5F] hover:bg-[#00574d] text-white font-bold rounded-xl"
+                    >
+                      {t.auth.login.sendResetLink || "إرسال رابط التعيين"}
+                    </Button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

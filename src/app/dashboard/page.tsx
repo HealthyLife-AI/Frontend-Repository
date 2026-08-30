@@ -33,6 +33,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
 
+  const [selectedDate, setSelectedDate] = useState<string>(todayIso());
   const [target, setTarget] = useState<NutritionTarget | null>(null);
   const [weightLogs, setWeightLogs] = useState<WeightLog[]>([]);
   const [dailyMeals, setDailyMeals] = useState<DailyMealsSummary | null>(null);
@@ -44,12 +45,11 @@ export default function DashboardPage() {
   const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
   const [editingItem, setEditingItem] = useState<LoggedMealItem | null>(null);
 
-  const fetchDashboardData = () => {
-    const today = todayIso();
+  const fetchDashboardData = (dateToFetch = selectedDate) => {
     Promise.allSettled([
       getHealthProfile(),
       listWeightLogs(),
-      getMealsForDate(today),
+      getMealsForDate(dateToFetch),
     ]).then(([profileRes, logsRes, mealsRes]) => {
       if (profileRes.status === "fulfilled") {
         setTarget(profileRes.value.nutrition_target);
@@ -65,8 +65,8 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    fetchDashboardData(selectedDate);
+  }, [selectedDate]);
 
   const handleLogout = async () => {
     try {
@@ -265,6 +265,53 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="max-w-6xl mx-auto flex flex-col gap-6 animate-fade-up">
+                {/* ── Date Selector ────────────────────────────────────── */}
+                <div className="flex items-center justify-between rounded-2xl bg-surface border border-outline-variant/30 px-4 py-3 shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        const d = new Date(selectedDate);
+                        d.setDate(d.getDate() - 1);
+                        setSelectedDate(d.toISOString().split("T")[0]);
+                      }}
+                      className="flex h-8 w-8 items-center justify-center rounded-xl border border-outline-variant/30 text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"
+                      title="اليوم السابق"
+                    >
+                      <span className="material-symbols-outlined text-base rtl:rotate-180">arrow_back_ios</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        const d = new Date(selectedDate);
+                        d.setDate(d.getDate() + 1);
+                        setSelectedDate(d.toISOString().split("T")[0]);
+                      }}
+                      className="flex h-8 w-8 items-center justify-center rounded-xl border border-outline-variant/30 text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"
+                      title="اليوم التالي"
+                    >
+                      <span className="material-symbols-outlined text-base rtl:rotate-180">arrow_forward_ios</span>
+                    </button>
+                    
+                    {selectedDate !== todayIso() && (
+                      <button
+                        onClick={() => setSelectedDate(todayIso())}
+                        className="px-3 py-1.5 rounded-xl bg-[#006B5F]/10 text-[#006B5F] text-xs font-bold hover:bg-[#006B5F]/20 transition-colors"
+                      >
+                        {t.common?.today || "اليوم"}
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 bg-surface-container-low px-3 py-1.5 rounded-xl border border-outline-variant/20">
+                    <span className="material-symbols-outlined text-[#006B5F] text-lg">calendar_today</span>
+                    <input
+                      type="date"
+                      value={selectedDate}
+                      onChange={(e) => e.target.value && setSelectedDate(e.target.value)}
+                      className="bg-transparent text-xs font-bold text-on-surface focus:outline-none cursor-pointer"
+                    />
+                  </div>
+                </div>
+
                 {/* ── Summary Stats Row ─────────────────────────────────── */}
                 {target && (
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -571,9 +618,9 @@ export default function DashboardPage() {
       <AddFoodModal
         food={selectedFood}
         mealType={activeMealType}
-        date={todayIso()}
+        date={selectedDate}
         onClose={() => setSelectedFood(null)}
-        onSuccess={fetchDashboardData}
+        onSuccess={() => fetchDashboardData(selectedDate)}
       />
 
       <EditMealItemModal
