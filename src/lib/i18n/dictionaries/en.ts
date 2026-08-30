@@ -221,6 +221,7 @@ const en = {
     searchPlaceholder: "Search food by name (e.g. Chicken, Rice, Apple)...",
     noResults: "No foods found matching your search.",
     amountGrams: "Amount (grams)",
+    calculatedCalories: "Calculated Calories",
     servingSize: "Per 100g",
     addSuccess: "Food added to meal successfully",
     deleteSuccess: "Item removed from meal",

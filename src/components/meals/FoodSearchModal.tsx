@@ -123,7 +123,7 @@ export function FoodSearchModal({
             </div>
           ) : results.length > 0 ? (
             results.map((food) => {
-              const name = locale === "ar" ? food.name_ar || food.name_en : food.name_en || food.name_ar;
+              const name = locale === "ar" ? food.name_ar || food.name : food.name || food.name_ar;
               const cals = Math.round(Number(food.calories_per_100g || 0));
               const prot = Math.round(Number(food.protein_per_100g || 0));
               const carb = Math.round(Number(food.carbs_per_100g || 0));

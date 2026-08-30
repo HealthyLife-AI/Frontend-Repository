@@ -37,8 +37,8 @@ export function EditMealItemModal({
   const foodName =
     item.food
       ? locale === "ar"
-        ? item.food.name_ar || item.food.name_en
-        : item.food.name_en || item.food.name_ar
+        ? item.food.name_ar || item.food.name
+        : item.food.name || item.food.name_ar
       : item.food_name || "Food Item";
 
   const handleUpdate = async () => {

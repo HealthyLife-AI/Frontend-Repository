@@ -3,7 +3,7 @@ import { apiClient } from "./client";
 export type FoodItem = {
   id: number;
   name_ar: string;
-  name_en: string;
+  name: string;
   calories_per_100g: number | string;
   protein_per_100g: number | string;
   carbs_per_100g: number | string;

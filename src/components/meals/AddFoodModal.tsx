@@ -37,7 +37,7 @@ export function AddFoodModal({
 
   if (!food) return null;
 
-  const foodName = locale === "ar" ? food.name_ar || food.name_en : food.name_en || food.name_ar;
+  const foodName = locale === "ar" ? food.name_ar || food.name : food.name || food.name_ar;
 
   const factor = amountGrams / 100;
   const calculatedCals = Math.round(Number(food.calories_per_100g || 0) * factor);
@@ -110,7 +110,7 @@ export function AddFoodModal({
           {/* Live Calculated Nutritional Breakdown */}
           <div className="rounded-2xl bg-gradient-to-br from-[#006B5F] to-[#004D44] p-5 text-white shadow-md relative overflow-hidden">
             <div className="flex items-baseline justify-between mb-3">
-              <span className="text-xs font-medium text-white/80 uppercase">السعرات المحسوبة</span>
+              <span className="text-xs font-medium text-white/80 uppercase">{t.meals?.calculatedCalories || (locale === "ar" ? "السعرات المحسوبة" : "Calculated Calories")}</span>
               <span className="text-3xl font-black">{calculatedCals.toLocaleString()} <span className="text-xs font-normal">kcal</span></span>
             </div>
 

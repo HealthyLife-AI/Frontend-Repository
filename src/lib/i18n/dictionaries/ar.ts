@@ -216,6 +216,7 @@ const ar: Dictionary = {
     searchPlaceholder: "ابحث عن طعام بالاسم (مثل: دجاج، أرز، تفاح)...",
     noResults: "لم يتم العثور على أطعمة تطابق بحثك.",
     amountGrams: "الكمية (بالجرام)",
+    calculatedCalories: "السعرات المحسوبة",
     servingSize: "لكل 100 جرام",
     addSuccess: "تمت إضافة الطعام للوجبة بنجاح",
     deleteSuccess: "تم حذف الطعام من الوجبة",

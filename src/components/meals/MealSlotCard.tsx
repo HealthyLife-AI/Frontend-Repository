@@ -89,8 +89,8 @@ export function MealSlotCard({
           items.map((item) => {
             const foodName = item.food
               ? locale === "ar"
-                ? item.food.name_ar || item.food.name_en
-                : item.food.name_en || item.food.name_ar
+                ? item.food.name_ar || item.food.name
+                : item.food.name || item.food.name_ar
               : item.food_name || "Food Item";
             const itemCals = Math.round(Number(item.calories_calculated || item.calories || 0));
             const grams = Number(item.quantity_grams || item.amount_g || 0);
